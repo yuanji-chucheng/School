@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <!-- 本地仓库路径（可以保持默认，也可以自定义，这里保持默认） -->
+    <localRepository>C:\Users\35287\m2\repository</localRepository>
+
+    <!-- 镜像配置，使用阿里云仓库加速 -->
+    <mirrors>
+        <mirror>
+            <id>aliyunmaven</id>
+            <name>阿里云公共仓库</name>
+            <mirrorOf>central</mirrorOf>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </mirror>
+        <!-- 专门针对 Spring 相关仓库的镜像，解决你的那些警告 -->
+        <mirror>
+            <id>spring-milestones</id>
+            <name>Spring Milestones Mirror</name>
+            <mirrorOf>spring-milestones,spring-snapshots</mirrorOf>
+            <url>https://maven.aliyun.com/repository/spring</url>
+        </mirror>
+    </mirrors>
+
+    <!-- 可选：配置一些额外的仓库，不过上面镜像已经覆盖了 -->
+</settings>
