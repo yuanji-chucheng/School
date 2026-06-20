@@ -16,6 +16,11 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+# 启动后自动打开主界面
+app:
+  browser:
+    auto-open: true
+
 # JWT 配置
 jwt:
   secret: campus-trade-jwt-secret-key-2024-demo

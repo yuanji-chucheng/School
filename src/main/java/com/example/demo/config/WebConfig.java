@@ -3,7 +3,11 @@ package com.example.demo.config;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Paths;
 
 /**
  * Web 配置：跨域与拦截器
@@ -15,6 +19,18 @@ public class WebConfig implements WebMvcConfigurer {
 
     public WebConfig(JwtInterceptor jwtInterceptor) {
         this.jwtInterceptor = jwtInterceptor;
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String frontendPath = Paths.get("frontend").toAbsolutePath().toUri().toString();
+        registry.addResourceHandler("/**")
+                .addResourceLocations(frontendPath + "/");
+    }
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/").setViewName("forward:/index.html");
     }
 
     @Override
