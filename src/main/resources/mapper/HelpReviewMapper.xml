@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.HelpReviewMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO help_review(help_order_id, reviewer_id, reviewee_id, rating, content)
+        VALUES(#{helpOrderId}, #{reviewerId}, #{revieweeId}, #{rating}, #{content})
+    </insert>
+    <select id="findByHelpOrderAndReviewer" resultType="HelpReview">
+        SELECT * FROM help_review WHERE help_order_id = #{helpOrderId} AND reviewer_id = #{reviewerId}
+    </select>
+</mapper>

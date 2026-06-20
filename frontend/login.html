@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>登录 - 校园二手平台</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar"><a class="logo" href="index.html">校园二手 & 互助</a></nav>
+<div class="login-wrap card">
+    <h2 style="text-align:center;margin-bottom:20px;">用户登录</h2>
+    <div id="msg"></div>
+    <div class="form-group"><label>学号</label><input id="studentId" placeholder="请输入学号"></div>
+    <div class="form-group"><label>密码</label><input id="password" type="password" placeholder="请输入密码"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">登录</button>
+    <p style="text-align:center;margin-top:12px;">还没有账号？<a href="register.html">去注册</a></p>
+    <p style="text-align:center;color:#999;font-size:12px;margin-top:8px;">管理员：学号 admin / 密码 admin123</p>
+</div>
+<script src="js/api.js"></script>
+<script>
+async function doLogin() {
+    try {
+        const res = await AuthAPI.login({
+            studentId: document.getElementById('studentId').value,
+            password: document.getElementById('password').value
+        });
+        saveAuth(res.data);
+        location.href = 'index.html';
+    } catch (e) { showMsg(document.getElementById('msg'), e.message, true); }
+}
+</script>
+</body>
+</html>

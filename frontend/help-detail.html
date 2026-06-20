@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>互助详情</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="card" id="detail"></div>
+    <div class="card" id="actions"></div>
+</div>
+<div id="review-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99;">
+    <div class="card" style="max-width:400px;margin:100px auto;">
+        <div class="card-title">互助评价</div>
+        <input type="hidden" id="rv-orderId"><input type="hidden" id="rv-revieweeId">
+        <div class="form-group"><label>评分(1-5)</label><input id="rv-rating" type="number" min="1" max="5" value="5"></div>
+        <div class="form-group"><label>评价内容</label><textarea id="rv-content"></textarea></div>
+        <button class="btn btn-primary" onclick="submitReview()">提交</button>
+    </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+renderNav();
+const id = new URLSearchParams(location.search).get('id');
+const user = getUser();
+let helpOrder = null;
+
+(async () => {
+    const res = await HelpAPI.detail(id);
+    const h = res.data;
+    document.getElementById('detail').innerHTML = `
+        <h2>${h.title}</h2>
+        <p><span class="tag">酬劳 ¥${h.reward || 0}</span>
+           <span class="tag status-${h.status}">${STATUS_MAP.help[h.status]}</span></p>
+        <p>${h.description || ''}</p>
+        <p style="color:#999;">发布者：${h.publisherNickname}</p>`;
+
+    let actions = '';
+    if (user && h.status === 0 && h.userId !== user.userId) {
+        actions = `<button class="btn btn-primary" onclick="acceptHelp()">接单</button>`;
+    }
+    if (user && h.status === 1 && h.userId === user.userId) {
+        actions = `<button class="btn btn-success" onclick="completeHelp()">确认完成</button>`;
+    }
+    if (user && h.status === 0 && h.userId === user.userId) {
+        actions = `<button class="btn btn-danger" onclick="cancelHelp()">取消需求</button>`;
+    }
+    if (h.status === 2) {
+        try {
+            const oRes = await HelpAPI.getOrder(id);
+            helpOrder = oRes.data;
+            if (user && helpOrder) {
+                const reviewee = user.userId === h.userId ? helpOrder.helperId : h.userId;
+                actions = `<button class="btn btn-warning" onclick="openReview(${helpOrder.id},${reviewee})">评价对方</button>`;
+            }
+        } catch(e) {}
+    }
+    document.getElementById('actions').innerHTML = actions;
+})();
+
+async function acceptHelp() {
+    if (!requireLogin()) return;
+    try { await HelpAPI.accept(id); alert('接单成功'); location.reload(); }
+    catch (e) { alert(e.message); }
+}
+async function completeHelp() {
+    try { await HelpAPI.complete(id); alert('已确认完成'); location.reload(); }
+    catch (e) { alert(e.message); }
+}
+async function cancelHelp() {
+    try { await HelpAPI.cancel(id); alert('已取消'); location.reload(); }
+    catch (e) { alert(e.message); }
+}
+function openReview(orderId, revieweeId) {
+    document.getElementById('rv-orderId').value = orderId;
+    document.getElementById('rv-revieweeId').value = revieweeId;
+    document.getElementById('review-modal').style.display = 'block';
+}
+async function submitReview() {
+    try {
+        await HelpAPI.review(parseInt(document.getElementById('rv-orderId').value), {
+            revieweeId: parseInt(document.getElementById('rv-revieweeId').value),
+            rating: parseInt(document.getElementById('rv-rating').value),
+            content: document.getElementById('rv-content').value
+        });
+        alert('评价成功');
+        document.getElementById('review-modal').style.display = 'none';
+    } catch (e) { alert(e.message); }
+}
+</script>
+</body>
+</html>

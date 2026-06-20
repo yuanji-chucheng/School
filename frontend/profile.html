@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>个人中心</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="card" id="profile-info"></div>
+    <div class="card">
+        <div class="card-title">我的发布物品</div>
+        <div id="my-items"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">系统通知 <button class="btn btn-default" onclick="markAllRead()">全部已读</button></div>
+        <div id="notifications"></div>
+    </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+if (!requireLogin()) throw '';
+renderNav();
+
+(async () => {
+    const res = await UserAPI.profile();
+    const u = res.data;
+    document.getElementById('profile-info').innerHTML = `
+        <div class="card-title">个人信息</div>
+        <p>学号：${u.studentId} | 昵称：${u.nickname} | 信用分：${u.creditScore}</p>
+        <p>角色：${u.role === 1 ? '管理员' : '学生'} | 状态：${STATUS_MAP.user[u.status]}</p>
+        <div class="form-group"><label>修改昵称</label><input id="nickname" value="${u.nickname}"></div>
+        <button class="btn btn-primary" onclick="updateProfile()">保存</button>`;
+
+    const myItems = await ItemAPI.search({ sellerId: u.id, page: 1, size: 20 });
+    document.getElementById('my-items').innerHTML = myItems.rows.map(i =>
+        `<p>${i.title} - ¥${i.price} <span class="tag status-${i.status}">${STATUS_MAP.item[i.status]}</span></p>`
+    ).join('') || '<p>暂无发布</p>';
+
+    loadNotifications();
+})();
+
+async function updateProfile() {
+    try {
+        await UserAPI.updateProfile({ nickname: document.getElementById('nickname').value });
+        alert('保存成功');
+    } catch (e) { alert(e.message); }
+}
+async function loadNotifications() {
+    const data = await NotificationAPI.list(1, 20);
+    document.getElementById('notifications').innerHTML = data.rows.map(n =>
+        `<div style="padding:8px 0;border-bottom:1px solid #eee;${n.isRead?'':'font-weight:bold;'}">
+            <strong>${n.title}</strong> - ${n.content}
+            <span style="color:#999;font-size:12px;">${n.createTime}</span>
+        </div>`).join('') || '<p>暂无通知</p>';
+}
+async function markAllRead() {
+    await NotificationAPI.markAllRead();
+    loadNotifications();
+}
+</script>
+</body>
+</html>

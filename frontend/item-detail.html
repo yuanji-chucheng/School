@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>物品详情</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="card" id="detail"></div>
+    <div class="card" id="actions"></div>
+</div>
+<script src="js/api.js"></script>
+<script>
+renderNav();
+const id = new URLSearchParams(location.search).get('id');
+(async () => {
+    const res = await ItemAPI.detail(id);
+    const i = res.data;
+    const imgs = (i.images || '').split(',').filter(Boolean);
+    document.getElementById('detail').innerHTML = `
+        <h2>${i.title}</h2>
+        <p style="color:#f56c6c;font-size:24px;font-weight:bold;">¥${i.price}</p>
+        <p><span class="tag">${i.category}</span> <span class="tag">新旧 ${i.conditionLevel}/5</span>
+           <span class="tag status-${i.status}">${STATUS_MAP.item[i.status]}</span></p>
+        <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;">
+            ${imgs.map(u => `<img src="${u}" style="width:200px;height:150px;object-fit:cover;border-radius:4px;">`).join('')}
+        </div>
+        <p>${i.description || '暂无描述'}</p>
+        <p style="color:#999;">卖家：${i.sellerNickname} | 发布时间：${i.createTime}</p>`;
+
+    let actions = '';
+    const user = getUser();
+    if (user && i.status === 1 && i.sellerId !== user.userId) {
+        actions += `<button class="btn btn-primary" onclick="buyItem()">立即购买</button> `;
+        actions += `<button class="btn btn-default" onclick="contactSeller(${i.sellerId})">联系卖家</button> `;
+    }
+    if (user) {
+        actions += `<button class="btn btn-warning" onclick="reportItem()">举报</button>`;
+    }
+    document.getElementById('actions').innerHTML = actions || '<p>请先登录后进行操作</p>';
+})();
+
+async function buyItem() {
+    if (!requireLogin()) return;
+    try {
+        const order = await OrderAPI.create(id);
+        alert('下单成功！');
+        location.href = 'orders.html';
+    } catch (e) { alert(e.message); }
+}
+function contactSeller(sellerId) {
+    if (!requireLogin()) return;
+    location.href = 'messages.html?peerId=' + sellerId;
+}
+async function reportItem() {
+    const reason = prompt('请输入举报原因：');
+    if (!reason) return;
+    try {
+        await ReportAPI.submit({ targetType: 'ITEM', targetId: parseInt(id), reason });
+        alert('举报已提交');
+    } catch (e) { alert(e.message); }
+}
+</script>
+</body>
+</html>

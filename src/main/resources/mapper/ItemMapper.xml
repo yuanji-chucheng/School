@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.ItemMapper">
+    <select id="findById" resultType="Item">
+        SELECT i.*, u.nickname AS seller_nickname
+        FROM item i LEFT JOIN sys_user u ON i.seller_id = u.id
+        WHERE i.id = #{id}
+    </select>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO item(seller_id, title, description, price, category, condition_level, images, status)
+        VALUES(#{sellerId}, #{title}, #{description}, #{price}, #{category}, #{conditionLevel}, #{images}, #{status})
+    </insert>
+    <update id="update">
+        UPDATE item
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="conditionLevel != null">condition_level = #{conditionLevel},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    <sql id="searchWhere">
+        <where>
+            <if test="category != null and category != ''">AND i.category = #{category}</if>
+            <if test="keyword != null and keyword != ''">
+                AND (i.title LIKE CONCAT('%', #{keyword}, '%') OR i.description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="minPrice != null">AND i.price &gt;= #{minPrice}</if>
+            <if test="maxPrice != null">AND i.price &lt;= #{maxPrice}</if>
+            <if test="status != null">AND i.status = #{status}</if>
+            <if test="sellerId != null">AND i.seller_id = #{sellerId}</if>
+        </where>
+    </sql>
+    <select id="search" resultType="Item">
+        SELECT i.*, u.nickname AS seller_nickname
+        FROM item i LEFT JOIN sys_user u ON i.seller_id = u.id
+        <include refid="searchWhere"/>
+        ORDER BY i.create_time DESC LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countSearch" resultType="long">
+        SELECT COUNT(*) FROM item i <include refid="searchWhere"/>
+    </select>
+    <select id="findPending" resultType="Item">
+        SELECT i.*, u.nickname AS seller_nickname FROM item i
+        LEFT JOIN sys_user u ON i.seller_id = u.id
+        WHERE i.status = 0 ORDER BY i.create_time DESC LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countPending" resultType="long">
+        SELECT COUNT(*) FROM item WHERE status = 0
+    </select>
+</mapper>

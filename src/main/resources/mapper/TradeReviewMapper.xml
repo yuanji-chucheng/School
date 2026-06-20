@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.TradeReviewMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO trade_review(order_id, reviewer_id, reviewee_id, rating, content)
+        VALUES(#{orderId}, #{reviewerId}, #{revieweeId}, #{rating}, #{content})
+    </insert>
+    <select id="findByOrderAndReviewer" resultType="TradeReview">
+        SELECT * FROM trade_review WHERE order_id = #{orderId} AND reviewer_id = #{reviewerId}
+    </select>
+    <select id="findByOrderId" resultType="TradeReview">
+        SELECT r.*, u.nickname AS reviewer_nickname FROM trade_review r
+        LEFT JOIN sys_user u ON r.reviewer_id = u.id WHERE r.order_id = #{orderId}
+    </select>
+</mapper>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>二手市场 - 校园二手平台</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="search-bar">
+        <input id="keyword" placeholder="关键词搜索" style="flex:1;min-width:150px;">
+        <select id="category"><option value="">全部分类</option></select>
+        <input id="minPrice" type="number" placeholder="最低价" style="width:100px;">
+        <input id="maxPrice" type="number" placeholder="最高价" style="width:100px;">
+        <button class="btn btn-primary" onclick="loadItems(1)">搜索</button>
+        <a class="btn btn-success" href="item-publish.html">发布物品</a>
+    </div>
+    <div class="grid" id="item-list"></div>
+    <div class="pagination" id="pagination"></div>
+</div>
+<script src="js/api.js"></script>
+<script>
+renderNav();
+CATEGORIES.forEach(c => {
+    document.getElementById('category').innerHTML += `<option value="${c}">${c}</option>`;
+});
+let currentPage = 1;
+async function loadItems(page) {
+    currentPage = page;
+    const params = { page, size: 12 };
+    const kw = document.getElementById('keyword').value;
+    const cat = document.getElementById('category').value;
+    const min = document.getElementById('minPrice').value;
+    const max = document.getElementById('maxPrice').value;
+    if (kw) params.keyword = kw;
+    if (cat) params.category = cat;
+    if (min) params.minPrice = min;
+    if (max) params.maxPrice = max;
+    const data = await ItemAPI.search(params);
+    document.getElementById('item-list').innerHTML = data.rows.map(i => `
+        <div class="item-card" onclick="location.href='item-detail.html?id=${i.id}'">
+            <img src="${getFirstImage(i.images)}" alt="">
+            <div class="info">
+                <div class="price">¥${i.price}</div>
+                <div class="title">${i.title}</div>
+                <span class="tag">${i.category}</span>
+                <span style="color:#999;font-size:12px;">${i.sellerNickname || ''}</span>
+            </div>
+        </div>`).join('') || '<p>暂无物品</p>';
+    const pages = Math.ceil(data.total / 12);
+    document.getElementById('pagination').innerHTML = Array.from({length: pages}, (_, i) =>
+        `<button class="btn ${i+1===page?'btn-primary':'btn-default'}" onclick="loadItems(${i+1})">${i+1}</button>`
+    ).join('');
+}
+loadItems(1);
+</script>
+</body>
+</html>

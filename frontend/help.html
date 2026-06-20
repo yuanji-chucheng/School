@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>互助服务</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="search-bar">
+        <select id="status"><option value="0">待接单</option><option value="">全部</option><option value="1">进行中</option><option value="2">已完成</option></select>
+        <button class="btn btn-primary" onclick="loadHelp(1)">筛选</button>
+        <a class="btn btn-success" href="help-publish.html">发布需求</a>
+    </div>
+    <div class="card" id="help-list"></div>
+    <div class="pagination" id="pagination"></div>
+</div>
+<script src="js/api.js"></script>
+<script>
+renderNav();
+async function loadHelp(page) {
+    const params = { page, size: 10 };
+    const s = document.getElementById('status').value;
+    if (s !== '') params.status = s;
+    const data = await HelpAPI.list(params);
+    document.getElementById('help-list').innerHTML = data.rows.map(h => `
+        <div style="padding:12px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <a href="help-detail.html?id=${h.id}" style="font-size:16px;font-weight:500;">${h.title}</a>
+                <p style="color:#666;font-size:13px;">${h.description || ''}</p>
+                <span class="tag">酬劳 ¥${h.reward || 0}</span>
+                <span class="tag status-${h.status}">${STATUS_MAP.help[h.status]}</span>
+                <span style="color:#999;margin-left:8px;">${h.publisherNickname}</span>
+            </div>
+        </div>`).join('') || '<p>暂无需求</p>';
+    const pages = Math.ceil(data.total / 10);
+    document.getElementById('pagination').innerHTML = Array.from({length: pages}, (_, i) =>
+        `<button class="btn ${i+1===page?'btn-primary':'btn-default'}" onclick="loadHelp(${i+1})">${i+1}</button>`
+    ).join('');
+}
+loadHelp(1);
+</script>
+</body>
+</html>

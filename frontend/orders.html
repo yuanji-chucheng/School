@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>我的订单</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="card">
+        <div class="card-title">我的订单</div>
+        <table>
+            <thead><tr><th>物品</th><th>价格</th><th>买家</th><th>卖家</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="order-list"></tbody>
+        </table>
+    </div>
+</div>
+<!-- 评价弹窗 -->
+<div id="review-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99;">
+    <div class="card" style="max-width:400px;margin:100px auto;">
+        <div class="card-title">交易评价</div>
+        <input type="hidden" id="rv-orderId"><input type="hidden" id="rv-revieweeId">
+        <div class="form-group"><label>评分(1-5)</label><input id="rv-rating" type="number" min="1" max="5" value="5"></div>
+        <div class="form-group"><label>评价内容</label><textarea id="rv-content"></textarea></div>
+        <button class="btn btn-primary" onclick="submitReview()">提交</button>
+        <button class="btn btn-default" onclick="document.getElementById('review-modal').style.display='none'">取消</button>
+    </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+if (!requireLogin()) throw '';
+renderNav();
+const user = getUser();
+
+async function loadOrders() {
+    const data = await OrderAPI.list(1, 50);
+    document.getElementById('order-list').innerHTML = data.rows.map(o => {
+        let btns = '';
+        const isBuyer = o.buyerId === user.userId;
+        const isSeller = o.sellerId === user.userId;
+        if (o.status === 0 && isBuyer) btns += `<button class="btn btn-primary" onclick="changeStatus(${o.id},1)">付款</button> `;
+        if (o.status === 0 && isBuyer) btns += `<button class="btn btn-danger" onclick="changeStatus(${o.id},4)">取消</button> `;
+        if (o.status === 1 && isSeller) btns += `<button class="btn btn-primary" onclick="changeStatus(${o.id},2)">发货</button> `;
+        if (o.status === 2 && isBuyer) btns += `<button class="btn btn-success" onclick="changeStatus(${o.id},3)">确认收货</button> `;
+        if (o.status === 3) {
+            const reviewee = isBuyer ? o.sellerId : o.buyerId;
+            btns += `<button class="btn btn-warning" onclick="openReview(${o.id},${reviewee})">评价</button>`;
+        }
+        return `<tr>
+            <td>${o.itemTitle}</td><td>¥${o.price}</td>
+            <td>${o.buyerNickname}</td><td>${o.sellerNickname}</td>
+            <td><span class="tag status-${o.status}">${STATUS_MAP.order[o.status]}</span></td>
+            <td>${btns}</td></tr>`;
+    }).join('') || '<tr><td colspan="6">暂无订单</td></tr>';
+}
+async function changeStatus(id, status) {
+    try { await OrderAPI.updateStatus(id, status); loadOrders(); }
+    catch (e) { alert(e.message); }
+}
+function openReview(orderId, revieweeId) {
+    document.getElementById('rv-orderId').value = orderId;
+    document.getElementById('rv-revieweeId').value = revieweeId;
+    document.getElementById('review-modal').style.display = 'block';
+}
+async function submitReview() {
+    try {
+        await OrderAPI.review({
+            orderId: parseInt(document.getElementById('rv-orderId').value),
+            revieweeId: parseInt(document.getElementById('rv-revieweeId').value),
+            rating: parseInt(document.getElementById('rv-rating').value),
+            content: document.getElementById('rv-content').value
+        });
+        document.getElementById('review-modal').style.display = 'none';
+        alert('评价成功');
+    } catch (e) { alert(e.message); }
+}
+loadOrders();
+</script>
+</body>
+</html>

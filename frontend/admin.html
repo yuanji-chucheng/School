@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>管理后台</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('users',this)">用户审核</div>
+        <div class="tab" onclick="switchTab('items',this)">物品审核</div>
+        <div class="tab" onclick="switchTab('reports',this)">举报处理</div>
+    </div>
+    <div class="card" id="panel-users">
+        <div class="card-title">待审核用户</div>
+        <table><thead><tr><th>学号</th><th>昵称</th><th>注册时间</th><th>操作</th></tr></thead>
+        <tbody id="user-list"></tbody></table>
+    </div>
+    <div class="card" id="panel-items" style="display:none;">
+        <div class="card-title">待审核物品</div>
+        <table><thead><tr><th>标题</th><th>价格</th><th>卖家</th><th>操作</th></tr></thead>
+        <tbody id="item-list"></tbody></table>
+    </div>
+    <div class="card" id="panel-reports" style="display:none;">
+        <div class="card-title">待处理举报</div>
+        <table><thead><tr><th>类型</th><th>目标ID</th><th>原因</th><th>举报人</th><th>操作</th></tr></thead>
+        <tbody id="report-list"></tbody></table>
+    </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+if (!requireLogin()) throw '';
+renderNav();
+const user = getUser();
+if (user.role !== 1) { alert('无权限'); location.href = 'index.html'; }
+
+function switchTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    ['users','items','reports'].forEach(p => {
+        document.getElementById('panel-' + p).style.display = p === name ? 'block' : 'none';
+    });
+}
+
+async function loadUsers() {
+    const data = await UserAPI.pending(1, 50);
+    document.getElementById('user-list').innerHTML = data.rows.map(u =>
+        `<tr><td>${u.studentId}</td><td>${u.nickname}</td><td>${u.createTime}</td>
+        <td><button class="btn btn-success" onclick="auditUser(${u.id},true)">通过</button>
+        <button class="btn btn-danger" onclick="auditUser(${u.id},false)">驳回</button></td></tr>`
+    ).join('') || '<tr><td colspan="4">暂无</td></tr>';
+}
+async function auditUser(id, approved) {
+    const reason = approved ? '' : prompt('驳回原因：');
+    await UserAPI.audit(id, approved, reason);
+    loadUsers();
+}
+
+async function loadItems() {
+    const data = await ItemAPI.pending(1, 50);
+    document.getElementById('item-list').innerHTML = data.rows.map(i =>
+        `<tr><td>${i.title}</td><td>¥${i.price}</td><td>${i.sellerNickname}</td>
+        <td><button class="btn btn-success" onclick="auditItem(${i.id},true)">通过</button>
+        <button class="btn btn-danger" onclick="auditItem(${i.id},false)">驳回</button></td></tr>`
+    ).join('') || '<tr><td colspan="4">暂无</td></tr>';
+}
+async function auditItem(id, approved) {
+    const reason = approved ? '' : prompt('驳回原因：');
+    await ItemAPI.audit(id, approved, reason);
+    loadItems();
+}
+
+async function loadReports() {
+    const data = await ReportAPI.pending(1, 50);
+    document.getElementById('report-list').innerHTML = data.rows.map(r =>
+        `<tr><td>${r.targetType}</td><td>${r.targetId}</td><td>${r.reason}</td><td>${r.reporterNickname}</td>
+        <td><button class="btn btn-primary" onclick="handleReport(${r.id})">处理</button></td></tr>`
+    ).join('') || '<tr><td colspan="5">暂无</td></tr>';
+}
+async function handleReport(id) {
+    const result = prompt('处理结果：');
+    if (!result) return;
+    await ReportAPI.handle(id, result);
+    loadReports();
+}
+
+loadUsers(); loadItems(); loadReports();
+</script>
+</body>
+</html>

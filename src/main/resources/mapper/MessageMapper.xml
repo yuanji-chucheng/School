@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.MessageMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO message(sender_id, receiver_id, content, is_read)
+        VALUES(#{senderId}, #{receiverId}, #{content}, #{isRead})
+    </insert>
+    <select id="findConversation" resultType="Message">
+        SELECT m.*, s.nickname AS sender_nickname, r.nickname AS receiver_nickname
+        FROM message m
+        LEFT JOIN sys_user s ON m.sender_id = s.id
+        LEFT JOIN sys_user r ON m.receiver_id = r.id
+        WHERE (m.sender_id = #{userId} AND m.receiver_id = #{peerId})
+           OR (m.sender_id = #{peerId} AND m.receiver_id = #{userId})
+        ORDER BY m.create_time ASC LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countConversation" resultType="long">
+        SELECT COUNT(*) FROM message
+        WHERE (sender_id = #{userId} AND receiver_id = #{peerId})
+           OR (sender_id = #{peerId} AND receiver_id = #{userId})
+    </select>
+    <select id="findContacts" resultType="Message">
+        SELECT m.*, s.nickname AS sender_nickname, r.nickname AS receiver_nickname
+        FROM message m
+        LEFT JOIN sys_user s ON m.sender_id = s.id
+        LEFT JOIN sys_user r ON m.receiver_id = r.id
+        WHERE m.id IN (
+            SELECT MAX(id) FROM message
+            WHERE sender_id = #{userId} OR receiver_id = #{userId}
+            GROUP BY LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)
+        )
+        ORDER BY m.create_time DESC
+    </select>
+    <update id="markRead">
+        UPDATE message SET is_read = 1 WHERE sender_id = #{senderId} AND receiver_id = #{receiverId} AND is_read = 0
+    </update>
+</mapper>

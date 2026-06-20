@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>私信</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container" style="display:flex;gap:16px;">
+    <div class="card" style="width:260px;">
+        <div class="card-title">联系人</div>
+        <div id="contacts"></div>
+    </div>
+    <div class="card" style="flex:1;">
+        <div class="card-title">对话 <span id="peer-name"></span></div>
+        <div class="chat-box" id="chat-box"></div>
+        <div style="display:flex;gap:8px;">
+            <input id="msg-input" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:4px;" placeholder="输入消息...">
+            <button class="btn btn-primary" onclick="sendMsg()">发送</button>
+        </div>
+    </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+if (!requireLogin()) throw '';
+renderNav();
+const user = getUser();
+let currentPeerId = null;
+
+async function loadContacts() {
+    const res = await MessageAPI.contacts();
+    document.getElementById('contacts').innerHTML = res.data.map(m => {
+        const peerId = m.senderId === user.userId ? m.receiverId : m.senderId;
+        const name = m.senderId === user.userId ? m.receiverNickname : m.senderNickname;
+        return `<div style="padding:8px;cursor:pointer;border-bottom:1px solid #eee;" onclick="openChat(${peerId},'${name}')">${name}</div>`;
+    }).join('') || '<p>暂无对话</p>';
+
+    const peerParam = new URLSearchParams(location.search).get('peerId');
+    if (peerParam) openChat(parseInt(peerParam), '用户' + peerParam);
+}
+
+async function openChat(peerId, name) {
+    currentPeerId = peerId;
+    document.getElementById('peer-name').textContent = name || ('用户' + peerId);
+    const data = await MessageAPI.conversation(peerId, 1, 100);
+    document.getElementById('chat-box').innerHTML = data.rows.map(m => {
+        const mine = m.senderId === user.userId;
+        return `<div class="chat-msg ${mine?'mine':''}"><div class="bubble">${m.content}<br><small>${m.createTime}</small></div></div>`;
+    }).join('');
+    document.getElementById('chat-box').scrollTop = 99999;
+}
+
+async function sendMsg() {
+    if (!currentPeerId) { alert('请选择联系人'); return; }
+    const content = document.getElementById('msg-input').value;
+    if (!content) return;
+    try {
+        await MessageAPI.send({ receiverId: currentPeerId, content });
+        document.getElementById('msg-input').value = '';
+        openChat(currentPeerId, document.getElementById('peer-name').textContent);
+        loadContacts();
+    } catch (e) { alert(e.message); }
+}
+loadContacts();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.NotificationMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notification(user_id, title, content, type, is_read)
+        VALUES(#{userId}, #{title}, #{content}, #{type}, #{isRead})
+    </insert>
+    <select id="findByUser" resultType="Notification">
+        SELECT * FROM notification WHERE user_id = #{userId}
+        ORDER BY create_time DESC LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM notification WHERE user_id = #{userId}
+    </select>
+    <update id="markRead">
+        UPDATE notification SET is_read = 1 WHERE id = #{id} AND user_id = #{userId}
+    </update>
+    <update id="markAllRead">
+        UPDATE notification SET is_read = 1 WHERE user_id = #{userId}
+    </update>
+</mapper>

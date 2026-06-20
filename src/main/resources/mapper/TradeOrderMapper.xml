@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.TradeOrderMapper">
+    <select id="findById" resultType="TradeOrder">
+        SELECT o.*, i.title AS item_title, b.nickname AS buyer_nickname, s.nickname AS seller_nickname
+        FROM trade_order o
+        LEFT JOIN item i ON o.item_id = i.id
+        LEFT JOIN sys_user b ON o.buyer_id = b.id
+        LEFT JOIN sys_user s ON o.seller_id = s.id
+        WHERE o.id = #{id}
+    </select>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO trade_order(item_id, buyer_id, seller_id, price, status)
+        VALUES(#{itemId}, #{buyerId}, #{sellerId}, #{price}, #{status})
+    </insert>
+    <update id="updateStatus">
+        UPDATE trade_order SET status = #{status} WHERE id = #{id}
+    </update>
+    <select id="findByUser" resultType="TradeOrder">
+        SELECT o.*, i.title AS item_title, b.nickname AS buyer_nickname, s.nickname AS seller_nickname
+        FROM trade_order o
+        LEFT JOIN item i ON o.item_id = i.id
+        LEFT JOIN sys_user b ON o.buyer_id = b.id
+        LEFT JOIN sys_user s ON o.seller_id = s.id
+        WHERE o.buyer_id = #{userId} OR o.seller_id = #{userId}
+        ORDER BY o.create_time DESC LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM trade_order WHERE buyer_id = #{userId} OR seller_id = #{userId}
+    </select>
+</mapper>

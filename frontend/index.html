@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>校园二手交易与互助平台</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="card">
+        <h2>欢迎来到校园二手物品交易与互助服务平台</h2>
+        <p style="margin:12px 0;color:#666;">买卖闲置物品，发布互助需求，让校园生活更便捷。</p>
+        <a class="btn btn-primary" href="items.html">浏览二手物品</a>
+        <a class="btn btn-success" href="help.html" style="margin-left:8px;">查看互助需求</a>
+    </div>
+    <div class="card">
+        <div class="card-title">最新上架物品</div>
+        <div class="grid" id="latest-items"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">最新互助需求</div>
+        <div id="latest-help"></div>
+    </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+renderNav();
+(async () => {
+    try {
+        const items = await ItemAPI.search({ page: 1, size: 8 });
+        document.getElementById('latest-items').innerHTML = items.rows.map(i => `
+            <div class="item-card" onclick="location.href='item-detail.html?id=${i.id}'">
+                <img src="${getFirstImage(i.images)}" alt="">
+                <div class="info">
+                    <div class="price">¥${i.price}</div>
+                    <div class="title">${i.title}</div>
+                    <span class="tag">${i.category}</span>
+                </div>
+            </div>`).join('') || '<p>暂无物品</p>';
+
+        const help = await HelpAPI.list({ status: 0, page: 1, size: 5 });
+        document.getElementById('latest-help').innerHTML = help.rows.map(h => `
+            <div style="padding:8px 0;border-bottom:1px solid #eee;">
+                <a href="help-detail.html?id=${h.id}">${h.title}</a>
+                <span class="tag">酬劳 ¥${h.reward || 0}</span>
+                <span style="color:#999;margin-left:8px;">${h.publisherNickname}</span>
+            </div>`).join('') || '<p>暂无互助需求</p>';
+    } catch (e) { console.error(e); }
+})();
+</script>
+</body>
+</html>

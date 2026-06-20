@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.HelpOrderMapper">
+    <select id="findById" resultType="HelpOrder">
+        SELECT ho.*, u.nickname AS helper_nickname, hr.title AS request_title
+        FROM help_order ho
+        LEFT JOIN sys_user u ON ho.helper_id = u.id
+        LEFT JOIN help_request hr ON ho.request_id = hr.id
+        WHERE ho.id = #{id}
+    </select>
+    <select id="findByRequestId" resultType="HelpOrder">
+        SELECT ho.*, u.nickname AS helper_nickname FROM help_order ho
+        LEFT JOIN sys_user u ON ho.helper_id = u.id WHERE ho.request_id = #{requestId}
+    </select>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO help_order(request_id, helper_id, status) VALUES(#{requestId}, #{helperId}, #{status})
+    </insert>
+    <update id="updateStatus">
+        UPDATE help_order SET status = #{status} WHERE id = #{id}
+    </update>
+</mapper>

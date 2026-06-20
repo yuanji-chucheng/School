@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>发布物品</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<nav class="navbar">
+    <a class="logo" href="index.html">校园二手 & 互助</a>
+    <div class="nav-links" id="nav-links"></div>
+</nav>
+<div class="container">
+    <div class="card" style="max-width:600px;">
+        <div class="card-title">发布二手物品</div>
+        <div id="msg"></div>
+        <div class="form-group"><label>标题</label><input id="title"></div>
+        <div class="form-group"><label>描述</label><textarea id="description"></textarea></div>
+        <div class="form-group"><label>价格</label><input id="price" type="number" step="0.01"></div>
+        <div class="form-group"><label>分类</label><select id="category"></select></div>
+        <div class="form-group"><label>新旧程度(1-5)</label><input id="conditionLevel" type="number" min="1" max="5" value="3"></div>
+        <div class="form-group"><label>图片URL（多张用逗号分隔）</label><input id="images" placeholder="https://example.com/a.jpg,https://..."></div>
+        <button class="btn btn-primary" onclick="publish()">提交发布（需审核）</button>
+    </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+if (!requireLogin()) throw '';
+renderNav();
+CATEGORIES.forEach(c => document.getElementById('category').innerHTML += `<option>${c}</option>`);
+async function publish() {
+    try {
+        await ItemAPI.publish({
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            price: document.getElementById('price').value,
+            category: document.getElementById('category').value,
+            conditionLevel: parseInt(document.getElementById('conditionLevel').value),
+            images: document.getElementById('images').value
+        });
+        showMsg(document.getElementById('msg'), '发布成功，等待管理员审核', false);
+    } catch (e) { showMsg(document.getElementById('msg'), e.message, true); }
+}
+</script>
+</body>
+</html>
