@@ -13,4 +13,7 @@ public interface UserMapper {
     long countPending();
     List<User> findAll(@Param("offset") int offset, @Param("limit") int limit);
     long countAll();
+    List<User> findApprovedStudents(@Param("offset") int offset, @Param("limit") int limit);
+    long countApprovedStudents();
+    int deleteById(Long id);
 }

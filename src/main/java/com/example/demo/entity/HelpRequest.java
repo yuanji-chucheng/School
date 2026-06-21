@@ -12,7 +12,7 @@ public class HelpRequest {
     private String title;
     private String description;
     private BigDecimal reward;
-    /** 0待接单 1进行中 2已完成 3已取消 */
+    /** 0待审核 1待接单 2进行中 3已完成 4已取消 5已下架/已驳回 */
     private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

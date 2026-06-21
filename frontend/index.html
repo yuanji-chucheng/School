@@ -42,7 +42,7 @@ renderNav();
                 </div>
             </div>`).join('') || '<p>暂无物品</p>';
 
-        const help = await HelpAPI.list({ status: 0, page: 1, size: 5 });
+        const help = await HelpAPI.list({ status: 1, page: 1, size: 5 });
         document.getElementById('latest-help').innerHTML = help.rows.map(h => `
             <div style="padding:8px 0;border-bottom:1px solid #eee;">
                 <a href="help-detail.html?id=${h.id}">${h.title}</a>

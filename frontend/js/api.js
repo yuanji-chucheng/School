@@ -74,8 +74,11 @@ const UserAPI = {
     updateProfile: (data) => put('/users/profile', data),
     getById: (id) => get('/users/' + id),
     pending: (page, size) => get(`/users/pending?page=${page}&size=${size}`),
+    students: (page, size) => get(`/users/admin/students?page=${page}&size=${size}`),
     all: (page, size) => get(`/users/admin/list?page=${page}&size=${size}`),
-    audit: (id, approved, reason) => post(`/users/${id}/audit`, { approved, reason })
+    audit: (id, approved, reason) => post(`/users/${id}/audit`, { approved, reason }),
+    deleteStudent: (id) => request(`/users/${id}/admin`, { method: 'DELETE' }),
+    resetPassword: (id, newPassword) => post(`/users/${id}/reset-password`, { newPassword })
 };
 
 // ========== 物品 API ==========
@@ -113,6 +116,9 @@ const HelpAPI = {
     accept: (id) => post('/help/' + id + '/accept', {}),
     complete: (id) => post('/help/' + id + '/complete', {}),
     cancel: (id) => post('/help/' + id + '/cancel', {}),
+    pending: (page, size) => get(`/help/pending?page=${page}&size=${size}`),
+    audit: (id, approved, reason) => post(`/help/${id}/audit`, { approved, reason }),
+    myOrders: (page, size) => get(`/help/my-orders?page=${page}&size=${size}`),
     getOrder: (id) => get('/help/' + id + '/order'),
     review: (orderId, data) => post('/help/order/' + orderId + '/review', data)
 };
@@ -127,8 +133,9 @@ const NotificationAPI = {
 // ========== 举报 API ==========
 const ReportAPI = {
     submit: (data) => post('/reports', data),
+    detail: (id) => get('/reports/' + id),
     pending: (page, size) => get(`/reports/pending?page=${page}&size=${size}`),
-    handle: (id, result) => post(`/reports/${id}/handle?result=${encodeURIComponent(result)}`, {})
+    handle: (id, action) => post(`/reports/${id}/handle`, { action })
 };
 
 // ========== 私信 API ==========
@@ -143,7 +150,8 @@ const STATUS_MAP = {
     user: { 0: '待审核', 1: '已通过', 2: '已驳回' },
     item: { 0: '待审核', 1: '已上架', 2: '已驳回', 3: '已售出', 4: '已下架' },
     order: { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消' },
-    help: { 0: '待接单', 1: '进行中', 2: '已完成', 3: '已取消' }
+    /** 0待审核 1待接单 2进行中 3已完成 4已取消 5已下架/已驳回 */
+    help: { 0: '待审核', 1: '待接单', 2: '进行中', 3: '已完成', 4: '已取消', 5: '已下架' }
 };
 
 const CATEGORIES = ['书籍', '电子产品', '生活用品', '服饰', '运动器材', '其他'];
@@ -156,9 +164,15 @@ function renderNav() {
     const user = getUser();
     const nav = document.getElementById('nav-links');
     if (!nav) return;
-    let html = '<a href="index.html">首页</a><a href="items.html">二手市场</a><a href="help.html">互助服务</a>';
+    let html = '<a href="index.html">首页</a>';
+    if (!user || user.role !== 1) {
+        html += '<a href="items.html">二手市场</a><a href="help.html">互助服务</a>';
+    }
     if (user) {
-        html += `<a href="orders.html">我的订单</a><a href="messages.html">私信</a><a href="profile.html">个人中心</a>`;
+        if (user.role !== 1) {
+            html += `<a href="orders.html">我的订单</a>`;
+        }
+        html += `<a href="messages.html">私信</a><a href="profile.html">个人中心</a>`;
         if (user.role === 1) html += '<a href="admin.html">管理后台</a>';
         html += `<a href="#" onclick="logout()">退出(${user.nickname})</a>`;
     } else {

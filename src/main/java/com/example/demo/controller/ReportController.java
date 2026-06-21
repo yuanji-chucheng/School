@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.common.PageResult;
 import com.example.demo.common.Result;
+import com.example.demo.dto.ReportHandleRequest;
 import com.example.demo.dto.ReportRequest;
 import com.example.demo.entity.Report;
 import com.example.demo.service.ReportService;
@@ -24,6 +25,11 @@ public class ReportController {
         return Result.ok("举报已提交", null);
     }
 
+    @GetMapping("/{id:\\d+}")
+    public Result<Report> detail(@PathVariable Long id) {
+        return Result.ok(reportService.getById(id));
+    }
+
     /** 管理员：待处理举报 */
     @GetMapping("/pending")
     public PageResult<Report> pending(@RequestParam(defaultValue = "1") int page,
@@ -33,8 +39,8 @@ public class ReportController {
 
     /** 管理员：处理举报 */
     @PostMapping("/{id:\\d+}/handle")
-    public Result<Void> handle(@PathVariable Long id, @RequestParam String result) {
-        reportService.handle(id, result);
-        return Result.ok(null);
+    public Result<Void> handle(@PathVariable Long id, @RequestBody ReportHandleRequest req) {
+        reportService.handle(id, req);
+        return Result.ok("处理成功", null);
     }
 }

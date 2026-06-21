@@ -12,10 +12,17 @@
 </nav>
 <div class="container">
     <div class="card">
-        <div class="card-title">我的订单</div>
+        <div class="card-title">二手交易订单</div>
         <table>
             <thead><tr><th>物品</th><th>价格</th><th>买家</th><th>卖家</th><th>状态</th><th>操作</th></tr></thead>
             <tbody id="order-list"></tbody>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-title">互助接单详情</div>
+        <table>
+            <thead><tr><th>需求标题</th><th>描述</th><th>酬劳</th><th>帖主</th><th>接单时间</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="help-order-list"></tbody>
         </table>
     </div>
 </div>
@@ -57,6 +64,41 @@ async function loadOrders() {
             <td>${btns}</td></tr>`;
     }).join('') || '<tr><td colspan="6">暂无订单</td></tr>';
 }
+
+async function loadHelpOrders() {
+    try {
+        const data = await HelpAPI.myOrders(1, 50);
+        document.getElementById('help-order-list').innerHTML = data.rows.map(o => {
+            let btns = '';
+            if (o.status === 1 && o.requestStatus === 2) {
+                btns = `<button class="btn btn-success" onclick="completeHelp(${o.requestId})">已完成</button>`;
+            }
+            if (o.status === 2) {
+                btns += `<a class="btn btn-default" href="help-detail.html?id=${o.requestId}">查看详情</a>`;
+            }
+            const reqStatus = o.requestStatus != null ? STATUS_MAP.help[o.requestStatus] : '-';
+            return `<tr>
+                <td><a href="help-detail.html?id=${o.requestId}">${o.requestTitle || ''}</a></td>
+                <td>${(o.requestDescription || '').slice(0, 30)}</td>
+                <td>¥${o.requestReward || 0}</td>
+                <td>${o.publisherNickname || ''}</td>
+                <td>${o.createTime || ''}</td>
+                <td><span class="tag">${reqStatus}</span></td>
+                <td>${btns}</td></tr>`;
+        }).join('') || '<tr><td colspan="7">暂无互助接单</td></tr>';
+    } catch (e) {
+        document.getElementById('help-order-list').innerHTML = '<tr><td colspan="7">暂无互助接单</td></tr>';
+    }
+}
+
+async function completeHelp(requestId) {
+    try {
+        await HelpAPI.complete(requestId);
+        alert('已标记完成，已通知帖主');
+        loadHelpOrders();
+    } catch (e) { alert(e.message); }
+}
+
 async function changeStatus(id, status) {
     try { await OrderAPI.updateStatus(id, status); loadOrders(); }
     catch (e) { alert(e.message); }
@@ -79,6 +121,7 @@ async function submitReview() {
     } catch (e) { alert(e.message); }
 }
 loadOrders();
+loadHelpOrders();
 </script>
 </body>
 </html>

@@ -72,7 +72,7 @@ CREATE TABLE help_request (
     title       VARCHAR(100)   NOT NULL COMMENT '标题',
     description TEXT           COMMENT '描述',
     reward      DECIMAL(10,2)  DEFAULT 0 COMMENT '酬劳',
-    status      TINYINT        NOT NULL DEFAULT 0 COMMENT '0待接单 1进行中 2已完成 3已取消',
+    status      TINYINT        NOT NULL DEFAULT 0 COMMENT '0待审核 1待接单 2进行中 3已完成 4已取消 5已下架',
     create_time DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user (user_id),

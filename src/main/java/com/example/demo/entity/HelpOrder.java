@@ -15,4 +15,8 @@ public class HelpOrder {
     private LocalDateTime updateTime;
     private String helperNickname;
     private String requestTitle;
+    private String requestDescription;
+    private java.math.BigDecimal requestReward;
+    private Integer requestStatus;
+    private String publisherNickname;
 }

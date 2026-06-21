@@ -11,7 +11,14 @@
     <div class="nav-links" id="nav-links"></div>
 </nav>
 <div class="container">
+    <div class="card" id="report-panel" style="display:none;border-left:4px solid #e6a23c;">
+        <div class="card-title">举报处理</div>
+        <p id="report-info"></p>
+        <button class="btn btn-danger" onclick="handleReport('REMOVE')">审核下架</button>
+        <button class="btn btn-success" onclick="handleReport('NO_VIOLATION')">审核无违规</button>
+    </div>
     <div class="card" id="detail"></div>
+    <div class="card" id="order-info" style="display:none;"></div>
     <div class="card" id="actions"></div>
 </div>
 <div id="review-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99;">
@@ -27,6 +34,7 @@
 <script>
 renderNav();
 const id = new URLSearchParams(location.search).get('id');
+const reportId = new URLSearchParams(location.search).get('reportId');
 const user = getUser();
 let helpOrder = null;
 
@@ -40,20 +48,48 @@ let helpOrder = null;
         <p>${h.description || ''}</p>
         <p style="color:#999;">发布者：${h.publisherNickname}</p>`;
 
-    let actions = '';
-    if (user && h.status === 0 && h.userId !== user.userId) {
-        actions = `<button class="btn btn-primary" onclick="acceptHelp()">接单</button>`;
-    }
-    if (user && h.status === 1 && h.userId === user.userId) {
-        actions = `<button class="btn btn-success" onclick="completeHelp()">确认完成</button>`;
-    }
-    if (user && h.status === 0 && h.userId === user.userId) {
-        actions = `<button class="btn btn-danger" onclick="cancelHelp()">取消需求</button>`;
-    }
-    if (h.status === 2) {
+    if (h.status >= 2) {
         try {
             const oRes = await HelpAPI.getOrder(id);
             helpOrder = oRes.data;
+            if (helpOrder) {
+                document.getElementById('order-info').style.display = 'block';
+                document.getElementById('order-info').innerHTML = `
+                    <div class="card-title">接单详情</div>
+                    <p>接单者：${helpOrder.helperNickname}</p>
+                    <p>接单时间：${helpOrder.createTime || ''}</p>
+                    <p>状态：<span class="tag status-${helpOrder.status}">${helpOrder.status === 2 ? '已完成' : '进行中'}</span></p>`;
+            }
+        } catch(e) {}
+    }
+
+    if (user && user.role === 1 && reportId) {
+        const rRes = await ReportAPI.detail(reportId);
+        const r = rRes.data;
+        document.getElementById('report-panel').style.display = 'block';
+        document.getElementById('report-info').innerHTML =
+            `举报人：${r.reporterNickname} | 原因：${r.reason}`;
+    }
+
+    let actions = '';
+    if (user && h.status === 1 && h.userId !== user.userId) {
+        actions = `<button class="btn btn-primary" onclick="acceptHelp()">接单</button>`;
+    }
+    if (user && h.status === 2 && helpOrder && helpOrder.helperId === user.userId) {
+        actions = `<button class="btn btn-success" onclick="completeHelp()">已完成</button>`;
+    }
+    if (user && h.status === 1 && h.userId === user.userId) {
+        actions = `<button class="btn btn-danger" onclick="cancelHelp()">取消需求</button>`;
+    }
+    if (user && h.userId !== user.userId && !(user.role === 1 && reportId)) {
+        actions += `<button class="btn btn-warning" onclick="reportHelp()">举报</button>`;
+    }
+    if (h.status === 3) {
+        try {
+            if (!helpOrder) {
+                const oRes = await HelpAPI.getOrder(id);
+                helpOrder = oRes.data;
+            }
             if (user && helpOrder) {
                 const reviewee = user.userId === h.userId ? helpOrder.helperId : h.userId;
                 actions = `<button class="btn btn-warning" onclick="openReview(${helpOrder.id},${reviewee})">评价对方</button>`;
@@ -69,12 +105,30 @@ async function acceptHelp() {
     catch (e) { alert(e.message); }
 }
 async function completeHelp() {
-    try { await HelpAPI.complete(id); alert('已确认完成'); location.reload(); }
+    try { await HelpAPI.complete(id); alert('已标记完成，已通知帖主'); location.reload(); }
     catch (e) { alert(e.message); }
 }
 async function cancelHelp() {
     try { await HelpAPI.cancel(id); alert('已取消'); location.reload(); }
     catch (e) { alert(e.message); }
+}
+async function reportHelp() {
+    if (!requireLogin()) return;
+    const reason = prompt('请输入举报原因：');
+    if (!reason) return;
+    try {
+        await ReportAPI.submit({ targetType: 'HELP', targetId: parseInt(id), reason });
+        alert('举报已提交');
+    } catch (e) { alert(e.message); }
+}
+async function handleReport(action) {
+    const label = action === 'REMOVE' ? '审核下架' : '审核无违规';
+    if (!confirm(`确定执行「${label}」？`)) return;
+    try {
+        await ReportAPI.handle(reportId, action);
+        alert('处理成功，已通知发布者和举报者');
+        location.href = 'admin.html';
+    } catch (e) { alert(e.message); }
 }
 function openReview(orderId, revieweeId) {
     document.getElementById('rv-orderId').value = orderId;

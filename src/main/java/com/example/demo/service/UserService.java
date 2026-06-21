@@ -4,6 +4,7 @@ import com.example.demo.common.BusinessException;
 import com.example.demo.common.PageResult;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.LoginResponse;
+import com.example.demo.dto.PasswordResetRequest;
 import com.example.demo.dto.RegisterRequest;
 import com.example.demo.entity.User;
 import com.example.demo.mapper.UserMapper;
@@ -102,6 +103,38 @@ public class UserService {
         List<User> rows = userMapper.findAll(offset, size);
         rows.forEach(u -> u.setPassword(null));
         return new PageResult<>(rows, userMapper.countAll());
+    }
+
+    /** 管理员：已通过注册的学生列表 */
+    public PageResult<User> approvedStudents(int page, int size) {
+        checkAdmin();
+        int offset = (page - 1) * size;
+        List<User> rows = userMapper.findApprovedStudents(offset, size);
+        rows.forEach(u -> u.setPassword(null));
+        return new PageResult<>(rows, userMapper.countApprovedStudents());
+    }
+
+    /** 管理员：删除学生 */
+    public void deleteStudent(Long userId) {
+        checkAdmin();
+        User user = userMapper.findById(userId);
+        if (user == null) throw new BusinessException("用户不存在");
+        if (user.getRole() != 0) throw new BusinessException("只能删除学生账号");
+        if (userMapper.deleteById(userId) == 0) throw new BusinessException("删除失败");
+    }
+
+    /** 管理员：重置学生密码 */
+    public void resetPassword(Long userId, PasswordResetRequest req) {
+        checkAdmin();
+        if (req.getNewPassword() == null || req.getNewPassword().isBlank()) {
+            throw new BusinessException("新密码不能为空");
+        }
+        User user = userMapper.findById(userId);
+        if (user == null) throw new BusinessException("用户不存在");
+        if (user.getRole() != 0) throw new BusinessException("只能修改学生密码");
+        user.setPassword(PasswordUtil.encrypt(req.getNewPassword()));
+        userMapper.update(user);
+        notificationService.send(userId, "密码已重置", "管理员已重置您的登录密码，请使用新密码登录", "USER_ADMIN");
     }
 
     public User getById(Long id) {

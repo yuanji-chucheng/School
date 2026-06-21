@@ -25,6 +25,9 @@ public class ItemService {
     }
 
     public Item publish(ItemRequest req) {
+        if (req.getPrice() == null || req.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("价格不能小于0");
+        }
         Item item = new Item();
         item.setSellerId(UserContext.getUserId());
         item.setTitle(req.getTitle());

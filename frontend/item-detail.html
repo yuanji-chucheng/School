@@ -11,6 +11,12 @@
     <div class="nav-links" id="nav-links"></div>
 </nav>
 <div class="container">
+    <div class="card" id="report-panel" style="display:none;border-left:4px solid #e6a23c;">
+        <div class="card-title">举报处理</div>
+        <p id="report-info"></p>
+        <button class="btn btn-danger" onclick="handleReport('REMOVE')">审核下架</button>
+        <button class="btn btn-success" onclick="handleReport('NO_VIOLATION')">审核无违规</button>
+    </div>
     <div class="card" id="detail"></div>
     <div class="card" id="actions"></div>
 </div>
@@ -18,6 +24,9 @@
 <script>
 renderNav();
 const id = new URLSearchParams(location.search).get('id');
+const reportId = new URLSearchParams(location.search).get('reportId');
+const user = getUser();
+
 (async () => {
     const res = await ItemAPI.detail(id);
     const i = res.data;
@@ -33,13 +42,20 @@ const id = new URLSearchParams(location.search).get('id');
         <p>${i.description || '暂无描述'}</p>
         <p style="color:#999;">卖家：${i.sellerNickname} | 发布时间：${i.createTime}</p>`;
 
+    if (user && user.role === 1 && reportId) {
+        const rRes = await ReportAPI.detail(reportId);
+        const r = rRes.data;
+        document.getElementById('report-panel').style.display = 'block';
+        document.getElementById('report-info').innerHTML =
+            `举报人：${r.reporterNickname} | 原因：${r.reason}`;
+    }
+
     let actions = '';
-    const user = getUser();
     if (user && i.status === 1 && i.sellerId !== user.userId) {
         actions += `<button class="btn btn-primary" onclick="buyItem()">立即购买</button> `;
         actions += `<button class="btn btn-default" onclick="contactSeller(${i.sellerId})">联系卖家</button> `;
     }
-    if (user) {
+    if (user && i.sellerId !== user.userId && !(user.role === 1 && reportId)) {
         actions += `<button class="btn btn-warning" onclick="reportItem()">举报</button>`;
     }
     document.getElementById('actions').innerHTML = actions || '<p>请先登录后进行操作</p>';
@@ -48,7 +64,7 @@ const id = new URLSearchParams(location.search).get('id');
 async function buyItem() {
     if (!requireLogin()) return;
     try {
-        const order = await OrderAPI.create(id);
+        await OrderAPI.create(id);
         alert('下单成功！');
         location.href = 'orders.html';
     } catch (e) { alert(e.message); }
@@ -63,6 +79,15 @@ async function reportItem() {
     try {
         await ReportAPI.submit({ targetType: 'ITEM', targetId: parseInt(id), reason });
         alert('举报已提交');
+    } catch (e) { alert(e.message); }
+}
+async function handleReport(action) {
+    const label = action === 'REMOVE' ? '审核下架' : '审核无违规';
+    if (!confirm(`确定执行「${label}」？`)) return;
+    try {
+        await ReportAPI.handle(reportId, action);
+        alert('处理成功，已通知发布者和举报者');
+        location.href = 'admin.html';
     } catch (e) { alert(e.message); }
 }
 </script>

@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.common.PageResult;
 import com.example.demo.common.Result;
+import com.example.demo.dto.AuditRequest;
 import com.example.demo.dto.HelpRequestDto;
 import com.example.demo.dto.ReviewRequest;
 import com.example.demo.entity.HelpOrder;
@@ -34,6 +35,20 @@ public class HelpController {
         return helpService.list(status, userId, page, size);
     }
 
+    /** 我的互助接单 */
+    @GetMapping("/my-orders")
+    public PageResult<HelpOrder> myOrders(@RequestParam(defaultValue = "1") int page,
+                                          @RequestParam(defaultValue = "10") int size) {
+        return helpService.myHelpOrders(page, size);
+    }
+
+    /** 管理员：待审核互助帖 */
+    @GetMapping("/pending")
+    public PageResult<HelpRequest> pending(@RequestParam(defaultValue = "1") int page,
+                                           @RequestParam(defaultValue = "10") int size) {
+        return helpService.pendingRequests(page, size);
+    }
+
     @GetMapping("/{id:\\d+}")
     public Result<HelpRequest> detail(@PathVariable Long id) {
         return Result.ok(helpService.getById(id));
@@ -53,6 +68,12 @@ public class HelpController {
     @PostMapping("/{id:\\d+}/cancel")
     public Result<Void> cancel(@PathVariable Long id) {
         helpService.cancel(id);
+        return Result.ok(null);
+    }
+
+    @PostMapping("/{id:\\d+}/audit")
+    public Result<Void> audit(@PathVariable Long id, @RequestBody AuditRequest req) {
+        helpService.audit(id, req);
         return Result.ok(null);
     }
 

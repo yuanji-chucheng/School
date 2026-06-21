@@ -18,4 +18,18 @@
     <update id="updateStatus">
         UPDATE help_order SET status = #{status} WHERE id = #{id}
     </update>
+    <select id="findByHelperId" resultType="HelpOrder">
+        SELECT ho.*, u.nickname AS helper_nickname, hr.title AS request_title,
+               hr.description AS request_description, hr.reward AS request_reward,
+               hr.status AS request_status, pu.nickname AS publisher_nickname
+        FROM help_order ho
+        LEFT JOIN sys_user u ON ho.helper_id = u.id
+        LEFT JOIN help_request hr ON ho.request_id = hr.id
+        LEFT JOIN sys_user pu ON hr.user_id = pu.id
+        WHERE ho.helper_id = #{helperId}
+        ORDER BY ho.create_time DESC LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countByHelperId" resultType="long">
+        SELECT COUNT(*) FROM help_order WHERE helper_id = #{helperId}
+    </select>
 </mapper>

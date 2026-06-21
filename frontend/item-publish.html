@@ -29,11 +29,17 @@ if (!requireLogin()) throw '';
 renderNav();
 CATEGORIES.forEach(c => document.getElementById('category').innerHTML += `<option>${c}</option>`);
 async function publish() {
+    const priceVal = document.getElementById('price').value;
+    const price = parseFloat(priceVal);
+    if (priceVal === '' || isNaN(price) || price < 0) {
+        alert('价格必须大于等于0');
+        return;
+    }
     try {
         await ItemAPI.publish({
             title: document.getElementById('title').value,
             description: document.getElementById('description').value,
-            price: document.getElementById('price').value,
+            price: price,
             category: document.getElementById('category').value,
             conditionLevel: parseInt(document.getElementById('conditionLevel').value),
             images: document.getElementById('images').value

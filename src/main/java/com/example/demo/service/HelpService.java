@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.common.BusinessException;
 import com.example.demo.common.PageResult;
+import com.example.demo.dto.AuditRequest;
 import com.example.demo.dto.HelpRequestDto;
 import com.example.demo.dto.ReviewRequest;
 import com.example.demo.entity.HelpOrder;
@@ -15,7 +16,9 @@ import com.example.demo.mapper.UserMapper;
 import com.example.demo.util.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /** 互助需求服务 */
@@ -39,18 +42,34 @@ public class HelpService {
     }
 
     public HelpRequest publish(HelpRequestDto dto) {
+        if (!StringUtils.hasText(dto.getTitle())) {
+            throw new BusinessException("标题不能为空");
+        }
+        if (!StringUtils.hasText(dto.getDescription())) {
+            throw new BusinessException("描述不能为空");
+        }
+        if (dto.getReward() == null) {
+            throw new BusinessException("酬劳不能为空");
+        }
+        if (dto.getReward().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("酬劳不能小于0");
+        }
         HelpRequest req = new HelpRequest();
         req.setUserId(UserContext.getUserId());
-        req.setTitle(dto.getTitle());
-        req.setDescription(dto.getDescription());
+        req.setTitle(dto.getTitle().trim());
+        req.setDescription(dto.getDescription().trim());
         req.setReward(dto.getReward());
-        req.setStatus(0);
+        req.setStatus(0); // 待审核
         requestMapper.insert(req);
         return requestMapper.findById(req.getId());
     }
 
     public PageResult<HelpRequest> list(Integer status, Long userId, int page, int size) {
         int offset = (page - 1) * size;
+        // 公开浏览默认只显示待接单
+        if (status == null && userId == null) {
+            status = 1;
+        }
         List<HelpRequest> rows = requestMapper.search(status, userId, offset, size);
         return new PageResult<>(rows, requestMapper.countSearch(status, userId));
     }
@@ -63,7 +82,7 @@ public class HelpService {
     @Transactional
     public HelpOrder accept(Long requestId) {
         HelpRequest req = requestMapper.findById(requestId);
-        if (req == null || req.getStatus() != 0) {
+        if (req == null || req.getStatus() != 1) {
             throw new BusinessException("需求不可接单");
         }
         if (req.getUserId().equals(UserContext.getUserId())) {
@@ -74,25 +93,25 @@ public class HelpService {
         order.setHelperId(UserContext.getUserId());
         order.setStatus(1);
         helpOrderMapper.insert(order);
-        requestMapper.updateStatus(requestId, 1);
+        requestMapper.updateStatus(requestId, 2);
         notificationService.send(req.getUserId(), "互助需求已被接单", "您的需求《" + req.getTitle() + "》已被接单", "HELP");
         return helpOrderMapper.findById(order.getId());
     }
 
-    /** 完成互助 */
+    /** 完成互助（接单者可标记完成） */
     @Transactional
     public void complete(Long requestId) {
         HelpRequest req = requestMapper.findById(requestId);
-        if (req == null || req.getStatus() != 1) throw new BusinessException("状态错误");
+        if (req == null || req.getStatus() != 2) throw new BusinessException("状态错误");
         HelpOrder order = helpOrderMapper.findByRequestId(requestId);
         if (order == null) throw new BusinessException("接单记录不存在");
-        // 发布者确认完成
-        if (!req.getUserId().equals(UserContext.getUserId())) {
-            throw new BusinessException("仅发布者可确认完成");
+        Long uid = UserContext.getUserId();
+        if (!order.getHelperId().equals(uid) && !req.getUserId().equals(uid)) {
+            throw new BusinessException("无权操作");
         }
         helpOrderMapper.updateStatus(order.getId(), 2);
-        requestMapper.updateStatus(requestId, 2);
-        notificationService.send(order.getHelperId(), "互助已完成", "需求《" + req.getTitle() + "》已完成", "HELP");
+        requestMapper.updateStatus(requestId, 3);
+        notificationService.send(req.getUserId(), "互助已完成", "需求《" + req.getTitle() + "》已由接单者标记完成", "HELP");
     }
 
     /** 取消需求 */
@@ -100,12 +119,48 @@ public class HelpService {
         HelpRequest req = requestMapper.findById(requestId);
         if (req == null) throw new BusinessException("需求不存在");
         if (!req.getUserId().equals(UserContext.getUserId())) throw new BusinessException("无权取消");
-        if (req.getStatus() != 0) throw new BusinessException("只能取消待接单需求");
-        requestMapper.updateStatus(requestId, 3);
+        if (req.getStatus() != 1) throw new BusinessException("只能取消待接单需求");
+        requestMapper.updateStatus(requestId, 4);
     }
 
     public HelpOrder getHelpOrder(Long requestId) {
         return helpOrderMapper.findByRequestId(requestId);
+    }
+
+    /** 我的互助接单 */
+    public PageResult<HelpOrder> myHelpOrders(int page, int size) {
+        int offset = (page - 1) * size;
+        Long helperId = UserContext.getUserId();
+        List<HelpOrder> rows = helpOrderMapper.findByHelperId(helperId, offset, size);
+        return new PageResult<>(rows, helpOrderMapper.countByHelperId(helperId));
+    }
+
+    /** 管理员审核互助帖 */
+    public void audit(Long id, AuditRequest req) {
+        if (!UserContext.isAdmin()) throw new BusinessException(403, "需要管理员权限");
+        HelpRequest helpReq = requestMapper.findById(id);
+        if (helpReq == null) throw new BusinessException("互助需求不存在");
+        if (helpReq.getStatus() != 0) throw new BusinessException("该需求不在待审核状态");
+        helpReq.setStatus(Boolean.TRUE.equals(req.getApproved()) ? 1 : 5);
+        requestMapper.update(helpReq);
+        notificationService.send(helpReq.getUserId(),
+                Boolean.TRUE.equals(req.getApproved()) ? "互助帖审核通过" : "互助帖审核驳回",
+                "您的互助需求《" + helpReq.getTitle() + "》" + (Boolean.TRUE.equals(req.getApproved()) ? "已通过审核" : "被驳回：" + req.getReason()),
+                "HELP_AUDIT");
+    }
+
+    public PageResult<HelpRequest> pendingRequests(int page, int size) {
+        if (!UserContext.isAdmin()) throw new BusinessException(403, "需要管理员权限");
+        int offset = (page - 1) * size;
+        return new PageResult<>(requestMapper.findPending(offset, size), requestMapper.countPending());
+    }
+
+    /** 管理员下架互助帖 */
+    public void offShelf(Long id) {
+        if (!UserContext.isAdmin()) throw new BusinessException(403, "需要管理员权限");
+        HelpRequest req = requestMapper.findById(id);
+        if (req == null) throw new BusinessException("互助需求不存在");
+        requestMapper.updateStatus(id, 5);
     }
 
     /** 互助互评 */

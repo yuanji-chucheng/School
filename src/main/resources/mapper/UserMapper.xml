@@ -16,11 +16,15 @@
         <set>
             <if test="nickname != null">nickname = #{nickname},</if>
             <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="password != null">password = #{password},</if>
             <if test="status != null">status = #{status},</if>
             <if test="creditScore != null">credit_score = #{creditScore},</if>
         </set>
         WHERE id = #{id}
     </update>
+    <delete id="deleteById">
+        DELETE FROM sys_user WHERE id = #{id} AND role = 0
+    </delete>
     <select id="findPending" resultType="User">
         SELECT * FROM sys_user WHERE status = 0 ORDER BY create_time DESC LIMIT #{offset}, #{limit}
     </select>
@@ -32,5 +36,11 @@
     </select>
     <select id="countAll" resultType="long">
         SELECT COUNT(*) FROM sys_user
+    </select>
+    <select id="findApprovedStudents" resultType="User">
+        SELECT * FROM sys_user WHERE role = 0 AND status = 1 ORDER BY create_time DESC LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countApprovedStudents" resultType="long">
+        SELECT COUNT(*) FROM sys_user WHERE role = 0 AND status = 1
     </select>
 </mapper>

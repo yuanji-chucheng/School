@@ -12,6 +12,17 @@
     <update id="updateStatus">
         UPDATE help_request SET status = #{status} WHERE id = #{id}
     </update>
+    <update id="update">
+        UPDATE help_request SET status = #{status} WHERE id = #{id}
+    </update>
+    <select id="findPending" resultType="HelpRequest">
+        SELECT h.*, u.nickname AS publisher_nickname FROM help_request h
+        LEFT JOIN sys_user u ON h.user_id = u.id
+        WHERE h.status = 0 ORDER BY h.create_time DESC LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countPending" resultType="long">
+        SELECT COUNT(*) FROM help_request WHERE status = 0
+    </select>
     <select id="search" resultType="HelpRequest">
         SELECT h.*, u.nickname AS publisher_nickname FROM help_request h
         LEFT JOIN sys_user u ON h.user_id = u.id

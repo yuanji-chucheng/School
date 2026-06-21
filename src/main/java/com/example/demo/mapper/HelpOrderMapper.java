@@ -8,4 +8,8 @@ public interface HelpOrderMapper {
     HelpOrder findByRequestId(Long requestId);
     int insert(HelpOrder order);
     int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+    java.util.List<HelpOrder> findByHelperId(@Param("helperId") Long helperId,
+                                             @Param("offset") int offset,
+                                             @Param("limit") int limit);
+    long countByHelperId(@Param("helperId") Long helperId);
 }

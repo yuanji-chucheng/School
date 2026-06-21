@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.common.PageResult;
 import com.example.demo.common.Result;
 import com.example.demo.dto.AuditRequest;
+import com.example.demo.dto.PasswordResetRequest;
 import com.example.demo.entity.User;
 import com.example.demo.service.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -52,5 +53,26 @@ public class UserController {
     public Result<Void> audit(@PathVariable Long id, @RequestBody AuditRequest req) {
         userService.auditUser(id, Boolean.TRUE.equals(req.getApproved()), req.getReason());
         return Result.ok(null);
+    }
+
+    /** 管理员：已通过注册的学生列表 */
+    @GetMapping("/admin/students")
+    public PageResult<User> approvedStudents(@RequestParam(defaultValue = "1") int page,
+                                             @RequestParam(defaultValue = "10") int size) {
+        return userService.approvedStudents(page, size);
+    }
+
+    /** 管理员：删除学生 */
+    @DeleteMapping("/{id:\\d+}/admin")
+    public Result<Void> deleteStudent(@PathVariable Long id) {
+        userService.deleteStudent(id);
+        return Result.ok("删除成功", null);
+    }
+
+    /** 管理员：重置学生密码 */
+    @PostMapping("/{id:\\d+}/reset-password")
+    public Result<Void> resetPassword(@PathVariable Long id, @RequestBody PasswordResetRequest req) {
+        userService.resetPassword(id, req);
+        return Result.ok("密码已重置", null);
     }
 }
