@@ -8,4 +8,5 @@ public class HelpRequestDto {
     private String title;
     private String description;
     private BigDecimal reward;
+    private String orderNote;
 }

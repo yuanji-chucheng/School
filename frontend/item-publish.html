@@ -10,7 +10,7 @@
     <a class="logo" href="index.html">校园二手 & 互助</a>
     <div class="nav-links" id="nav-links"></div>
 </nav>
-<div class="container">
+<div class="container" id="page-content">
     <div class="card" style="max-width:600px;">
         <div class="card-title">发布二手物品</div>
         <div id="msg"></div>
@@ -18,21 +18,157 @@
         <div class="form-group"><label>描述</label><textarea id="description"></textarea></div>
         <div class="form-group"><label>价格</label><input id="price" type="number" step="0.01"></div>
         <div class="form-group"><label>分类</label><select id="category"></select></div>
-        <div class="form-group"><label>新旧程度(1-5)</label><input id="conditionLevel" type="number" min="1" max="5" value="3"></div>
-        <div class="form-group"><label>图片URL（多张用逗号分隔）</label><input id="images" placeholder="https://example.com/a.jpg,https://..."></div>
+        <div class="form-group">
+            <label>新旧程度(1-5)</label>
+            <input id="conditionLevel" type="number" min="1" max="5" placeholder="请输入1-5之间的整数">
+            <div id="conditionError" class="field-error"></div>
+        </div>
+        <div class="form-group">
+            <label>图片（最多6张）</label>
+            <div class="image-upload-area" id="image-area">
+                <div class="image-add-btn" id="add-image-btn" onclick="openUploadModal()">+</div>
+            </div>
+        </div>
         <button class="btn btn-primary" onclick="publish()">提交发布（需审核）</button>
     </div>
 </div>
+
+<!-- 文件上传弹窗 -->
+<div class="modal-overlay" id="upload-modal">
+    <div class="modal-box">
+        <div class="modal-title">选择图片</div>
+        <p style="color:#666;font-size:13px;margin-bottom:12px;">从本地选择图片，最多6张，单张不超过5MB</p>
+        <input type="file" id="file-input" accept="image/*" multiple style="margin-bottom:16px;">
+        <div id="modal-preview" class="image-upload-area" style="margin-bottom:16px;"></div>
+        <div style="text-align:right;">
+            <button class="btn btn-primary" onclick="confirmUpload()">完成</button>
+            <button class="btn btn-default" onclick="closeUploadModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 发布成功弹窗 -->
+<div class="modal-overlay" id="success-modal">
+    <div class="modal-box" style="text-align:center;">
+        <div class="modal-title" style="color:#67c23a;">发布成功</div>
+        <p style="margin:16px 0;">您的物品已提交，等待管理员审核</p>
+        <button class="btn btn-primary" onclick="location.href='index.html'">返回首页</button>
+    </div>
+</div>
+
 <script src="js/api.js"></script>
 <script>
 if (!requireLogin()) throw '';
 renderNav();
 CATEGORIES.forEach(c => document.getElementById('category').innerHTML += `<option>${c}</option>`);
+
+let uploadedImages = [];
+let modalOpen = false;
+let pendingFiles = [];
+
+function setPageBlocked(blocked) {
+    document.getElementById('page-content').classList.toggle('modal-blocked', blocked);
+}
+
+function openUploadModal() {
+    if (uploadedImages.length >= 6) { alert('最多上传6张图片'); return; }
+    modalOpen = true;
+    pendingFiles = [];
+    document.getElementById('file-input').value = '';
+    document.getElementById('modal-preview').innerHTML = '';
+    document.getElementById('upload-modal').classList.add('show');
+    setPageBlocked(true);
+}
+
+function closeUploadModal() {
+    modalOpen = false;
+    document.getElementById('upload-modal').classList.remove('show');
+    setPageBlocked(false);
+}
+
+document.getElementById('file-input').addEventListener('change', function(e) {
+    pendingFiles = Array.from(e.target.files);
+    const remain = 6 - uploadedImages.length;
+    if (pendingFiles.length > remain) {
+        alert(`最多还能选择${remain}张图片`);
+        pendingFiles = pendingFiles.slice(0, remain);
+    }
+    document.getElementById('modal-preview').innerHTML = pendingFiles.map((f, i) =>
+        `<div class="image-thumb"><img src="${URL.createObjectURL(f)}" alt="预览${i+1}"></div>`
+    ).join('');
+});
+
+async function confirmUpload() {
+    if (pendingFiles.length === 0) { alert('请先选择图片'); return; }
+    try {
+        for (const file of pendingFiles) {
+            if (uploadedImages.length >= 6) break;
+            const url = await uploadFile(file);
+            uploadedImages.push(url.startsWith('http') ? url : window.location.origin + url);
+        }
+        renderImages();
+        closeUploadModal();
+    } catch (e) { alert(e.message); }
+}
+
+function renderImages() {
+    const area = document.getElementById('image-area');
+    area.innerHTML = uploadedImages.map((url, i) =>
+        `<div class="image-thumb"><img src="${url}"><button class="remove-btn" onclick="removeImage(${i})">×</button></div>`
+    ).join('');
+    if (uploadedImages.length < 6) {
+        area.innerHTML += `<div class="image-add-btn" onclick="openUploadModal()">+</div>`;
+    }
+}
+
+function removeImage(index) {
+    uploadedImages.splice(index, 1);
+    renderImages();
+}
+
+function validateCondition() {
+    const input = document.getElementById('conditionLevel');
+    const errEl = document.getElementById('conditionError');
+    const val = input.value.trim();
+    input.classList.remove('input-error');
+    errEl.textContent = '';
+    if (val === '') {
+        input.classList.add('input-error');
+        errEl.textContent = '请填写新旧程度（1-5）';
+        return false;
+    }
+    if (!/^\d+$/.test(val)) {
+        input.classList.add('input-error');
+        errEl.textContent = '新旧程度必须为整数';
+        return false;
+    }
+    const num = parseInt(val, 10);
+    if (num < 1) {
+        input.classList.add('input-error');
+        errEl.textContent = '新旧程度不能小于1，最低为1（全新）';
+        return false;
+    }
+    if (num > 5) {
+        input.classList.add('input-error');
+        errEl.textContent = '新旧程度不能大于5，最高为5（较旧）';
+        return false;
+    }
+    return true;
+}
+
+document.getElementById('conditionLevel').addEventListener('input', validateCondition);
+document.getElementById('conditionLevel').addEventListener('blur', validateCondition);
+
 async function publish() {
+    if (modalOpen) { alert('请先完成图片选择并关闭上传弹窗'); return; }
     const priceVal = document.getElementById('price').value;
     const price = parseFloat(priceVal);
     if (priceVal === '' || isNaN(price) || price < 0) {
         alert('价格必须大于等于0');
+        return;
+    }
+    if (!validateCondition()) {
+        alert('填写错误，请重新填写');
         return;
     }
     try {
@@ -41,10 +177,11 @@ async function publish() {
             description: document.getElementById('description').value,
             price: price,
             category: document.getElementById('category').value,
-            conditionLevel: parseInt(document.getElementById('conditionLevel').value),
-            images: document.getElementById('images').value
+            conditionLevel: parseInt(document.getElementById('conditionLevel').value, 10),
+            images: uploadedImages.join(',')
         });
-        showMsg(document.getElementById('msg'), '发布成功，等待管理员审核', false);
+        document.getElementById('success-modal').classList.add('show');
+        setPageBlocked(true);
     } catch (e) { showMsg(document.getElementById('msg'), e.message, true); }
 }
 </script>

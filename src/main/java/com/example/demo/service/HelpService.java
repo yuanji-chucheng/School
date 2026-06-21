@@ -59,6 +59,7 @@ public class HelpService {
         req.setTitle(dto.getTitle().trim());
         req.setDescription(dto.getDescription().trim());
         req.setReward(dto.getReward());
+        req.setOrderNote(dto.getOrderNote());
         req.setStatus(0); // 待审核
         requestMapper.insert(req);
         return requestMapper.findById(req.getId());
@@ -75,6 +76,47 @@ public class HelpService {
     }
 
     public HelpRequest getById(Long id) {
+        return requestMapper.findById(id);
+    }
+
+    /** 修改互助帖（仅发布者） */
+    public HelpRequest update(Long id, HelpRequestDto dto) {
+        HelpRequest req = requestMapper.findById(id);
+        if (req == null) throw new BusinessException("需求不存在");
+        if (!req.getUserId().equals(UserContext.getUserId())) {
+            throw new BusinessException("无权修改");
+        }
+        HelpRequest patch = new HelpRequest();
+        patch.setId(id);
+        if (req.getStatus() >= 2) {
+            patch.setOrderNote(dto.getOrderNote());
+        } else {
+            if (dto.getTitle() != null) patch.setTitle(dto.getTitle().trim());
+            if (dto.getDescription() != null) patch.setDescription(dto.getDescription().trim());
+            if (dto.getReward() != null) {
+                if (dto.getReward().compareTo(BigDecimal.ZERO) < 0) {
+                    throw new BusinessException("酬劳不能小于0");
+                }
+                patch.setReward(dto.getReward());
+            }
+            if (dto.getOrderNote() != null) patch.setOrderNote(dto.getOrderNote());
+            if (req.getStatus() == 1) patch.setStatus(0);
+        }
+        requestMapper.update(patch);
+        return requestMapper.findById(id);
+    }
+
+    /** 仅更新订单备注 */
+    public HelpRequest updateOrderNote(Long id, String orderNote) {
+        HelpRequest req = requestMapper.findById(id);
+        if (req == null) throw new BusinessException("需求不存在");
+        if (!req.getUserId().equals(UserContext.getUserId())) {
+            throw new BusinessException("无权修改");
+        }
+        HelpRequest patch = new HelpRequest();
+        patch.setId(id);
+        patch.setOrderNote(orderNote);
+        requestMapper.update(patch);
         return requestMapper.findById(id);
     }
 
@@ -127,12 +169,12 @@ public class HelpService {
         return helpOrderMapper.findByRequestId(requestId);
     }
 
-    /** 我的互助接单 */
+    /** 我的互助订单（接单者或发布者，最近5条由前端控制） */
     public PageResult<HelpOrder> myHelpOrders(int page, int size) {
         int offset = (page - 1) * size;
-        Long helperId = UserContext.getUserId();
-        List<HelpOrder> rows = helpOrderMapper.findByHelperId(helperId, offset, size);
-        return new PageResult<>(rows, helpOrderMapper.countByHelperId(helperId));
+        Long userId = UserContext.getUserId();
+        List<HelpOrder> rows = helpOrderMapper.findByUserId(userId, offset, size);
+        return new PageResult<>(rows, helpOrderMapper.countByUserId(userId));
     }
 
     /** 管理员审核互助帖 */

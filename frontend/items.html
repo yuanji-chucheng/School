@@ -14,8 +14,7 @@
     <div class="search-bar">
         <input id="keyword" placeholder="关键词搜索" style="flex:1;min-width:150px;">
         <select id="category"><option value="">全部分类</option></select>
-        <input id="minPrice" type="number" placeholder="最低价" style="width:100px;">
-        <input id="maxPrice" type="number" placeholder="最高价" style="width:100px;">
+        <button id="priceSortBtn" class="btn btn-sort-inactive" onclick="togglePriceSort()">价格升序</button>
         <button class="btn btn-primary" onclick="loadItems(1)">搜索</button>
         <a class="btn btn-success" href="item-publish.html">发布物品</a>
     </div>
@@ -29,17 +28,25 @@ CATEGORIES.forEach(c => {
     document.getElementById('category').innerHTML += `<option value="${c}">${c}</option>`;
 });
 let currentPage = 1;
+let priceSortSelected = false;
+
+function togglePriceSort() {
+    priceSortSelected = !priceSortSelected;
+    const btn = document.getElementById('priceSortBtn');
+    btn.classList.toggle('btn-sort-active', priceSortSelected);
+    btn.classList.toggle('btn-sort-inactive', !priceSortSelected);
+    loadItems(1);
+}
+
 async function loadItems(page) {
     currentPage = page;
     const params = { page, size: 12 };
     const kw = document.getElementById('keyword').value;
     const cat = document.getElementById('category').value;
-    const min = document.getElementById('minPrice').value;
-    const max = document.getElementById('maxPrice').value;
     if (kw) params.keyword = kw;
     if (cat) params.category = cat;
-    if (min) params.minPrice = min;
-    if (max) params.maxPrice = max;
+    if (priceSortSelected) params.priceSort = 'desc';
+    else params.priceSort = 'asc';
     const data = await ItemAPI.search(params);
     document.getElementById('item-list').innerHTML = data.rows.map(i => `
         <div class="item-card" onclick="location.href='item-detail.html?id=${i.id}'">

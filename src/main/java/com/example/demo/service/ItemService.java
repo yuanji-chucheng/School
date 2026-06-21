@@ -28,13 +28,17 @@ public class ItemService {
         if (req.getPrice() == null || req.getPrice().compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessException("价格不能小于0");
         }
+        Integer level = req.getConditionLevel() != null ? req.getConditionLevel() : 3;
+        if (level < 1 || level > 5) {
+            throw new BusinessException("新旧程度必须在1-5之间");
+        }
         Item item = new Item();
         item.setSellerId(UserContext.getUserId());
         item.setTitle(req.getTitle());
         item.setDescription(req.getDescription());
         item.setPrice(req.getPrice());
         item.setCategory(req.getCategory());
-        item.setConditionLevel(req.getConditionLevel() != null ? req.getConditionLevel() : 3);
+        item.setConditionLevel(level);
         item.setImages(req.getImages());
         item.setStatus(0); // 待审核
         itemMapper.insert(item);
@@ -47,13 +51,14 @@ public class ItemService {
 
     public PageResult<Item> search(String category, String keyword,
                                    BigDecimal minPrice, BigDecimal maxPrice,
-                                   Integer status, Long sellerId, int page, int size) {
+                                   Integer status, Long sellerId, String priceSort,
+                                   int page, int size) {
         int offset = (page - 1) * size;
         // 公开搜索默认只显示已通过
         if (status == null && sellerId == null) {
             status = 1;
         }
-        List<Item> rows = itemMapper.search(category, keyword, minPrice, maxPrice, status, sellerId, offset, size);
+        List<Item> rows = itemMapper.search(category, keyword, minPrice, maxPrice, status, sellerId, priceSort, offset, size);
         long total = itemMapper.countSearch(category, keyword, minPrice, maxPrice, status, sellerId);
         return new PageResult<>(rows, total);
     }

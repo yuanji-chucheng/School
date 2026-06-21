@@ -39,7 +39,12 @@
         SELECT i.*, u.nickname AS seller_nickname
         FROM item i LEFT JOIN sys_user u ON i.seller_id = u.id
         <include refid="searchWhere"/>
-        ORDER BY i.create_time DESC LIMIT #{offset}, #{limit}
+        ORDER BY i.price
+        <choose>
+            <when test="priceSort == 'desc'">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
+        , i.create_time DESC LIMIT #{offset}, #{limit}
     </select>
     <select id="countSearch" resultType="long">
         SELECT COUNT(*) FROM item i <include refid="searchWhere"/>

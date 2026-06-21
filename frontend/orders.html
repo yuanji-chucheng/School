@@ -12,16 +12,16 @@
 </nav>
 <div class="container">
     <div class="card">
-        <div class="card-title">二手交易订单</div>
+        <div class="card-title">二手交易订单 <span style="font-size:13px;color:#999;font-weight:normal;">（最近5条）</span></div>
         <table>
-            <thead><tr><th>物品</th><th>价格</th><th>买家</th><th>卖家</th><th>状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>物品</th><th>价格</th><th>买家</th><th>卖家</th><th>状态跟踪</th><th>操作</th></tr></thead>
             <tbody id="order-list"></tbody>
         </table>
     </div>
     <div class="card">
-        <div class="card-title">互助接单详情</div>
+        <div class="card-title">互助订单 <span style="font-size:13px;color:#999;font-weight:normal;">（最近5条）</span></div>
         <table>
-            <thead><tr><th>需求标题</th><th>描述</th><th>酬劳</th><th>帖主</th><th>接单时间</th><th>状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>需求标题</th><th>酬劳</th><th>角色</th><th>状态跟踪</th><th>操作</th></tr></thead>
             <tbody id="help-order-list"></tbody>
         </table>
     </div>
@@ -43,8 +43,34 @@ if (!requireLogin()) throw '';
 renderNav();
 const user = getUser();
 
+function renderTradeTrack(status) {
+    const steps = ['待付款', '待发货', '待收货', '已完成'];
+    if (status === 4) return '<span class="tag status-4">已取消</span>';
+    return `<div class="order-track">${steps.map((s, i) => {
+        let cls = 'step';
+        if (i < status) cls += ' done';
+        else if (i === status) cls += ' active';
+        return (i > 0 ? '<span class="arrow">→</span>' : '') + `<span class="${cls}">${s}</span>`;
+    }).join('')}</div>`;
+}
+
+function renderHelpTrack(orderStatus, requestStatus) {
+    if (requestStatus === 4) return '<span class="tag">已取消</span>';
+    const steps = [
+        { label: '已接单', done: true },
+        { label: '进行中', done: orderStatus >= 1, active: orderStatus === 1 },
+        { label: '已完成', done: orderStatus === 2, active: orderStatus === 2 }
+    ];
+    return `<div class="order-track">${steps.map((s, i) => {
+        let cls = 'step';
+        if (s.done && !s.active) cls += ' done';
+        if (s.active) cls += ' active';
+        return (i > 0 ? '<span class="arrow">→</span>' : '') + `<span class="${cls}">${s.label}</span>`;
+    }).join('')}</div>`;
+}
+
 async function loadOrders() {
-    const data = await OrderAPI.list(1, 50);
+    const data = await OrderAPI.list(1, 5);
     document.getElementById('order-list').innerHTML = data.rows.map(o => {
         let btns = '';
         const isBuyer = o.buyerId === user.userId;
@@ -60,34 +86,31 @@ async function loadOrders() {
         return `<tr>
             <td>${o.itemTitle}</td><td>¥${o.price}</td>
             <td>${o.buyerNickname}</td><td>${o.sellerNickname}</td>
-            <td><span class="tag status-${o.status}">${STATUS_MAP.order[o.status]}</span></td>
+            <td>${renderTradeTrack(o.status)}</td>
             <td>${btns}</td></tr>`;
     }).join('') || '<tr><td colspan="6">暂无订单</td></tr>';
 }
 
 async function loadHelpOrders() {
     try {
-        const data = await HelpAPI.myOrders(1, 50);
+        const data = await HelpAPI.myOrders(1, 5);
         document.getElementById('help-order-list').innerHTML = data.rows.map(o => {
-            let btns = '';
-            if (o.status === 1 && o.requestStatus === 2) {
-                btns = `<button class="btn btn-success" onclick="completeHelp(${o.requestId})">已完成</button>`;
+            const isHelper = o.helperId === user.userId;
+            const isPublisher = o.publisherId === user.userId;
+            let btns = `<a class="btn btn-default" href="help-detail.html?id=${o.requestId}">查看详情</a> `;
+            if (o.status === 1 && isHelper && o.requestStatus === 2) {
+                btns += `<button class="btn btn-success" onclick="completeHelp(${o.requestId})">标记完成</button>`;
             }
-            if (o.status === 2) {
-                btns += `<a class="btn btn-default" href="help-detail.html?id=${o.requestId}">查看详情</a>`;
-            }
-            const reqStatus = o.requestStatus != null ? STATUS_MAP.help[o.requestStatus] : '-';
+            const role = isHelper ? '接单者' : (isPublisher ? '发布者' : '-');
             return `<tr>
                 <td><a href="help-detail.html?id=${o.requestId}">${o.requestTitle || ''}</a></td>
-                <td>${(o.requestDescription || '').slice(0, 30)}</td>
                 <td>¥${o.requestReward || 0}</td>
-                <td>${o.publisherNickname || ''}</td>
-                <td>${o.createTime || ''}</td>
-                <td><span class="tag">${reqStatus}</span></td>
+                <td>${role}</td>
+                <td>${renderHelpTrack(o.status, o.requestStatus)}</td>
                 <td>${btns}</td></tr>`;
-        }).join('') || '<tr><td colspan="7">暂无互助接单</td></tr>';
+        }).join('') || '<tr><td colspan="5">暂无互助订单</td></tr>';
     } catch (e) {
-        document.getElementById('help-order-list').innerHTML = '<tr><td colspan="7">暂无互助接单</td></tr>';
+        document.getElementById('help-order-list').innerHTML = '<tr><td colspan="5">暂无互助订单</td></tr>';
     }
 }
 

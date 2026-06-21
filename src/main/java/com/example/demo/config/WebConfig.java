@@ -26,6 +26,9 @@ public class WebConfig implements WebMvcConfigurer {
         String frontendPath = Paths.get("frontend").toAbsolutePath().toUri().toString();
         registry.addResourceHandler("/**")
                 .addResourceLocations(frontendPath + "/");
+        String uploadPath = Paths.get("uploads").toAbsolutePath().toUri().toString();
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations(uploadPath);
     }
 
     @Override

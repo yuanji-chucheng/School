@@ -19,4 +19,5 @@ public class HelpOrder {
     private java.math.BigDecimal requestReward;
     private Integer requestStatus;
     private String publisherNickname;
+    private Long publisherId;
 }

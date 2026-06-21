@@ -49,6 +49,16 @@ public class HelpController {
         return helpService.pendingRequests(page, size);
     }
 
+    @PutMapping("/{id:\\d+}")
+    public Result<HelpRequest> update(@PathVariable Long id, @RequestBody HelpRequestDto dto) {
+        return Result.ok(helpService.update(id, dto));
+    }
+
+    @PutMapping("/{id:\\d+}/order-note")
+    public Result<HelpRequest> updateOrderNote(@PathVariable Long id, @RequestBody HelpRequestDto dto) {
+        return Result.ok(helpService.updateOrderNote(id, dto.getOrderNote()));
+    }
+
     @GetMapping("/{id:\\d+}")
     public Result<HelpRequest> detail(@PathVariable Long id) {
         return Result.ok(helpService.getById(id));

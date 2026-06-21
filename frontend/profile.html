@@ -13,8 +13,12 @@
 <div class="container">
     <div class="card" id="profile-info"></div>
     <div class="card">
-        <div class="card-title">我的发布物品</div>
+        <div class="card-title">我发布的二手物品</div>
         <div id="my-items"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">我发布的互助帖子</div>
+        <div id="my-help"></div>
     </div>
     <div class="card">
         <div class="card-title">系统通知 <button class="btn btn-default" onclick="markAllRead()">全部已读</button></div>
@@ -26,7 +30,7 @@
 if (!requireLogin()) throw '';
 renderNav();
 
-(async () => {
+async function loadProfile() {
     const res = await UserAPI.profile();
     const u = res.data;
     document.getElementById('profile-info').innerHTML = `
@@ -38,16 +42,32 @@ renderNav();
 
     const myItems = await ItemAPI.search({ sellerId: u.id, page: 1, size: 20 });
     document.getElementById('my-items').innerHTML = myItems.rows.map(i =>
-        `<p>${i.title} - ¥${i.price} <span class="tag status-${i.status}">${STATUS_MAP.item[i.status]}</span></p>`
+        `<div class="post-list-item">
+            <a href="item-detail.html?id=${i.id}">${i.title}</a>
+            <span>¥${i.price} <span class="tag status-${i.status}">${STATUS_MAP.item[i.status]}</span></span>
+        </div>`
     ).join('') || '<p>暂无发布</p>';
 
-    loadNotifications();
-})();
+    const myHelp = await HelpAPI.list({ userId: u.id, page: 1, size: 20 });
+    document.getElementById('my-help').innerHTML = myHelp.rows.map(h =>
+        `<div class="post-list-item">
+            <a href="help-detail.html?id=${h.id}">${h.title}</a>
+            <span>酬劳 ¥${h.reward || 0} <span class="tag status-${h.status}">${STATUS_MAP.help[h.status]}</span></span>
+        </div>`
+    ).join('') || '<p>暂无发布</p>';
+}
+
+loadProfile();
+loadNotifications();
 
 async function updateProfile() {
     try {
-        await UserAPI.updateProfile({ nickname: document.getElementById('nickname').value });
-        alert('保存成功');
+        const nickname = document.getElementById('nickname').value;
+        await UserAPI.updateProfile({ nickname });
+        const user = getUser();
+        user.nickname = nickname;
+        saveAuth({ ...user, token: getToken() });
+        location.reload();
     } catch (e) { alert(e.message); }
 }
 async function loadNotifications() {

@@ -35,9 +35,10 @@ public class ItemController {
                                    @RequestParam(required = false) BigDecimal maxPrice,
                                    @RequestParam(required = false) Integer status,
                                    @RequestParam(required = false) Long sellerId,
+                                   @RequestParam(required = false) String priceSort,
                                    @RequestParam(defaultValue = "1") int page,
                                    @RequestParam(defaultValue = "12") int size) {
-        return itemService.search(category, keyword, minPrice, maxPrice, status, sellerId, page, size);
+        return itemService.search(category, keyword, minPrice, maxPrice, status, sellerId, priceSort, page, size);
     }
 
     /** 物品详情（公开） */

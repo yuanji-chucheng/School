@@ -15,6 +15,7 @@ public interface ItemMapper {
                       @Param("maxPrice") BigDecimal maxPrice,
                       @Param("status") Integer status,
                       @Param("sellerId") Long sellerId,
+                      @Param("priceSort") String priceSort,
                       @Param("offset") int offset,
                       @Param("limit") int limit);
     long countSearch(@Param("category") String category,

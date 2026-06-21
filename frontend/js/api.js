@@ -23,9 +23,24 @@ function saveAuth(data) {
 
 /** 退出登录 */
 function logout() {
+    const user = getUser();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    location.href = 'login.html';
+    location.href = user && user.role === 1 ? 'admin.html' : 'login.html';
+}
+
+/** 上传图片文件 */
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const headers = {};
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const resp = await fetch(API_BASE + '/upload', { method: 'POST', headers, body: formData });
+    const data = await resp.json();
+    if (resp.status === 401) { logout(); throw new Error('登录已过期'); }
+    if (data.code && data.code !== 200) throw new Error(data.message || '上传失败');
+    return data.data;
 }
 
 /** 通用 Ajax 请求 */
@@ -108,6 +123,8 @@ const OrderAPI = {
 // ========== 互助 API ==========
 const HelpAPI = {
     publish: (data) => post('/help', data),
+    update: (id, data) => put('/help/' + id, data),
+    updateOrderNote: (id, orderNote) => put('/help/' + id + '/order-note', { orderNote }),
     list: (params) => {
         const qs = new URLSearchParams(params).toString();
         return get('/help?' + qs);
@@ -173,7 +190,7 @@ function renderNav() {
             html += `<a href="orders.html">我的订单</a>`;
         }
         html += `<a href="messages.html">私信</a><a href="profile.html">个人中心</a>`;
-        if (user.role === 1) html += '<a href="admin.html">管理后台</a>';
+        if (user.role === 1) html += '<a href="admin-panel.html">管理后台</a>';
         html += `<a href="#" onclick="logout()">退出(${user.nickname})</a>`;
     } else {
         html += '<a href="login.html">登录</a><a href="register.html">注册</a>';

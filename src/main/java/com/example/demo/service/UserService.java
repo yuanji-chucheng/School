@@ -54,6 +54,12 @@ public class UserService {
         if (user.getStatus() == 2) {
             throw new BusinessException("账号已被驳回，无法登录");
         }
+        if ("admin".equals(req.getLoginType()) && user.getRole() != 1) {
+            throw new BusinessException("非管理员账号，请使用学生登录入口");
+        }
+        if ("student".equals(req.getLoginType()) && user.getRole() == 1) {
+            throw new BusinessException("管理员请使用管理员入口登录");
+        }
         LoginResponse resp = new LoginResponse();
         resp.setToken(jwtUtil.generateToken(user.getId(), user.getStudentId(), user.getRole()));
         resp.setUserId(user.getId());
