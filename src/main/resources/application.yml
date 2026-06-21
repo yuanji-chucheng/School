@@ -5,9 +5,9 @@ spring:
   application:
     name: campus-trade
   datasource:
-    url: jdbc:mysql://localhost:3306/campus_trade?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: root
+    url: jdbc:mysql://rm-bp1gpy26lasmevofezo.mysql.rds.aliyuncs.com:3306/campus_trade?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: campus_user
+    password: Ycc123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis:

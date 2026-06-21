@@ -120,5 +120,5 @@ npx serve .
 
 - 后端采用 Spring Boot 整合 Spring MVC + MyBatis，分层清晰
 - JWT 拦截器校验登录态，公开浏览接口（物品/互助列表）无需 Token
-- 密码使用 SHA-256 加密存储（基础演示级别）
+- 密码使用 SHA-256 加密存储
 - 图片以 URL 字符串存储，多张用逗号分隔
