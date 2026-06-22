@@ -30,6 +30,7 @@ if (!requireLogin()) throw '';
 renderNav();
 const user = getUser();
 let currentPeerId = null;
+let refreshTimer = null;
 
 async function loadContacts() {
     const res = await MessageAPI.contacts();
@@ -46,12 +47,48 @@ async function loadContacts() {
 async function openChat(peerId, name) {
     currentPeerId = peerId;
     document.getElementById('peer-name').textContent = name || ('用户' + peerId);
-    const data = await MessageAPI.conversation(peerId, 1, 100);
+    await loadConversation();
+    startRefresh();
+}
+
+async function loadConversation() {
+    if (!currentPeerId) return;
+    const data = await MessageAPI.conversation(currentPeerId, 1, 100);
     document.getElementById('chat-box').innerHTML = data.rows.map(m => {
         const mine = m.senderId === user.userId;
         return `<div class="chat-msg ${mine?'mine':''}"><div class="bubble">${m.content}<br><small>${m.createTime}</small></div></div>`;
     }).join('');
     document.getElementById('chat-box').scrollTop = 99999;
+    await MessageAPI.readAll();
+    refreshNavBadge();
+}
+
+function startRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(async () => {
+        try {
+            await loadConversation();
+        } catch (e) {}
+    }, 3000);
+}
+
+function stopRefresh() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+    }
+}
+
+async function refreshNavBadge() {
+    const msgLink = document.getElementById('msg-link');
+    if (msgLink) {
+        const res = await MessageAPI.unreadCount();
+        if (res.data > 0) {
+            msgLink.innerHTML = `私信<span class="unread-badge">${res.data}</span>`;
+        } else {
+            msgLink.innerHTML = '私信';
+        }
+    }
 }
 
 async function sendMsg() {
@@ -61,11 +98,20 @@ async function sendMsg() {
     try {
         await MessageAPI.send({ receiverId: currentPeerId, content });
         document.getElementById('msg-input').value = '';
-        openChat(currentPeerId, document.getElementById('peer-name').textContent);
+        await loadConversation();
         loadContacts();
     } catch (e) { alert(e.message); }
 }
-loadContacts();
+
+async function init() {
+    await loadContacts();
+    await MessageAPI.readAll();
+    refreshNavBadge();
+}
+
+window.addEventListener('beforeunload', stopRefresh);
+
+init();
 </script>
 </body>
 </html>

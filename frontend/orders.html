@@ -72,7 +72,7 @@ function renderHelpTrack(orderStatus, requestStatus) {
 async function loadOrders() {
     const data = await OrderAPI.list(1, 5);
     document.getElementById('order-list').innerHTML = data.rows.map(o => {
-        let btns = '';
+        let btns = `<a class="btn btn-default" href="item-detail.html?id=${o.itemId}">查看详情</a> `;
         const isBuyer = o.buyerId === user.userId;
         const isSeller = o.sellerId === user.userId;
         if (o.status === 0 && isBuyer) btns += `<button class="btn btn-primary" onclick="changeStatus(${o.id},1)">付款</button> `;

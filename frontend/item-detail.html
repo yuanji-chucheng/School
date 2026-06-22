@@ -10,7 +10,7 @@
     <a class="logo" href="index.html">校园二手 & 互助</a>
     <div class="nav-links" id="nav-links"></div>
 </nav>
-<div class="container">
+<div class="container" id="page-content">
     <div class="card" id="report-panel" style="display:none;border-left:4px solid #e6a23c;">
         <div class="card-title">举报处理</div>
         <p id="report-info"></p>
@@ -20,21 +20,42 @@
     <div class="card" id="detail"></div>
     <div class="card" id="edit-panel" style="display:none;">
         <div class="card-title">修改帖子</div>
+        <div id="edit-msg"></div>
         <div class="form-group"><label>标题</label><input id="edit-title"></div>
         <div class="form-group"><label>描述</label><textarea id="edit-description"></textarea></div>
         <div class="form-group"><label>价格</label><input id="edit-price" type="number" step="0.01"></div>
         <div class="form-group"><label>分类</label><select id="edit-category"></select></div>
         <div class="form-group">
             <label>新旧程度(1-5)</label>
-            <input id="edit-conditionLevel" type="number" min="1" max="5">
+            <input id="edit-conditionLevel" type="number" min="1" max="5" placeholder="请输入1-5之间的整数">
             <div id="edit-conditionError" class="field-error"></div>
         </div>
-        <div class="form-group"><label>图片URL（多张用逗号分隔）</label><input id="edit-images"></div>
+        <div class="form-group">
+            <label>图片（最多6张）</label>
+            <div class="image-upload-area" id="edit-image-area">
+                <div class="image-add-btn" id="edit-add-image-btn" onclick="openEditUploadModal()">+</div>
+            </div>
+        </div>
         <button class="btn btn-primary" onclick="saveEdit()">保存修改</button>
         <button class="btn btn-default" onclick="cancelEdit()">取消</button>
     </div>
     <div class="card" id="actions"></div>
 </div>
+
+<!-- 文件上传弹窗 -->
+<div class="modal-overlay" id="edit-upload-modal">
+    <div class="modal-box">
+        <div class="modal-title">选择图片</div>
+        <p style="color:#666;font-size:13px;margin-bottom:12px;">从本地选择图片，最多6张，单张不超过5MB</p>
+        <input type="file" id="edit-file-input" accept="image/*" multiple style="margin-bottom:16px;">
+        <div id="edit-modal-preview" class="image-upload-area" style="margin-bottom:16px;"></div>
+        <div style="text-align:right;">
+            <button class="btn btn-primary" onclick="confirmEditUpload()">完成</button>
+            <button class="btn btn-default" onclick="closeEditUploadModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
 <script src="js/api.js"></script>
 <script>
 renderNav();
@@ -42,10 +63,73 @@ const id = new URLSearchParams(location.search).get('id');
 const reportId = new URLSearchParams(location.search).get('reportId');
 const user = getUser();
 let itemData = null;
+let editUploadedImages = [];
+let editModalOpen = false;
+let editPendingFiles = [];
 
 CATEGORIES.forEach(c => {
     document.getElementById('edit-category').innerHTML += `<option>${c}</option>`;
 });
+
+function setPageBlocked(blocked) {
+    document.getElementById('page-content').classList.toggle('modal-blocked', blocked);
+}
+
+function openEditUploadModal() {
+    if (editUploadedImages.length >= 6) { alert('最多上传6张图片'); return; }
+    editModalOpen = true;
+    editPendingFiles = [];
+    document.getElementById('edit-file-input').value = '';
+    document.getElementById('edit-modal-preview').innerHTML = '';
+    document.getElementById('edit-upload-modal').classList.add('show');
+    setPageBlocked(true);
+}
+
+function closeEditUploadModal() {
+    editModalOpen = false;
+    document.getElementById('edit-upload-modal').classList.remove('show');
+    setPageBlocked(false);
+}
+
+document.getElementById('edit-file-input').addEventListener('change', function(e) {
+    editPendingFiles = Array.from(e.target.files);
+    const remain = 6 - editUploadedImages.length;
+    if (editPendingFiles.length > remain) {
+        alert(`最多还能选择${remain}张图片`);
+        editPendingFiles = editPendingFiles.slice(0, remain);
+    }
+    document.getElementById('edit-modal-preview').innerHTML = editPendingFiles.map((f, i) =>
+        `<div class="image-thumb"><img src="${URL.createObjectURL(f)}" alt="预览${i+1}"></div>`
+    ).join('');
+});
+
+async function confirmEditUpload() {
+    if (editPendingFiles.length === 0) { alert('请先选择图片'); return; }
+    try {
+        for (const file of editPendingFiles) {
+            if (editUploadedImages.length >= 6) break;
+            const url = await uploadFile(file);
+            editUploadedImages.push(url.startsWith('http') ? url : window.location.origin + url);
+        }
+        renderEditImages();
+        closeEditUploadModal();
+    } catch (e) { alert(e.message); }
+}
+
+function renderEditImages() {
+    const area = document.getElementById('edit-image-area');
+    area.innerHTML = editUploadedImages.map((url, i) =>
+        `<div class="image-thumb"><img src="${url}"><button class="remove-btn" onclick="removeEditImage(${i})">×</button></div>`
+    ).join('');
+    if (editUploadedImages.length < 6) {
+        area.innerHTML += `<div class="image-add-btn" onclick="openEditUploadModal()">+</div>`;
+    }
+}
+
+function removeEditImage(index) {
+    editUploadedImages.splice(index, 1);
+    renderEditImages();
+}
 
 function renderDetail(i) {
     const imgs = (i.images || '').split(',').filter(Boolean);
@@ -67,13 +151,37 @@ function validateEditCondition() {
     const val = input.value.trim();
     input.classList.remove('input-error');
     errEl.textContent = '';
-    if (val === '') { input.classList.add('input-error'); errEl.textContent = '请填写新旧程度（1-5）'; return false; }
-    if (!/^\d+$/.test(val)) { input.classList.add('input-error'); errEl.textContent = '新旧程度必须为整数'; return false; }
+    if (val === '') {
+        input.classList.add('input-error');
+        errEl.textContent = '请填写新旧程度（1-5）';
+        return false;
+    }
     const num = parseInt(val, 10);
-    if (num < 1) { input.classList.add('input-error'); errEl.textContent = '新旧程度不能小于1'; return false; }
-    if (num > 5) { input.classList.add('input-error'); errEl.textContent = '新旧程度不能大于5'; return false; }
+    if (isNaN(num)) {
+        input.classList.add('input-error');
+        errEl.textContent = '新旧程度必须为整数';
+        return false;
+    }
+    if (!Number.isInteger(num)) {
+        input.classList.add('input-error');
+        errEl.textContent = '新旧程度必须为整数';
+        return false;
+    }
+    if (num < 1) {
+        input.classList.add('input-error');
+        errEl.textContent = '新旧程度不能小于1，最低为1（全新）';
+        return false;
+    }
+    if (num > 5) {
+        input.classList.add('input-error');
+        errEl.textContent = '新旧程度不能大于5，最高为5（较旧）';
+        return false;
+    }
     return true;
 }
+
+document.getElementById('edit-conditionLevel').addEventListener('input', validateEditCondition);
+document.getElementById('edit-conditionLevel').addEventListener('blur', validateEditCondition);
 
 function showEditForm() {
     document.getElementById('edit-title').value = itemData.title;
@@ -81,7 +189,8 @@ function showEditForm() {
     document.getElementById('edit-price').value = itemData.price;
     document.getElementById('edit-category').value = itemData.category;
     document.getElementById('edit-conditionLevel').value = itemData.conditionLevel;
-    document.getElementById('edit-images').value = itemData.images || '';
+    editUploadedImages = (itemData.images || '').split(',').filter(Boolean);
+    renderEditImages();
     document.getElementById('edit-panel').style.display = 'block';
     document.getElementById('detail').style.display = 'none';
 }
@@ -92,22 +201,32 @@ function cancelEdit() {
 }
 
 async function saveEdit() {
-    if (!validateEditCondition()) { alert('填写错误，请重新填写'); return; }
+    if (editModalOpen) { alert('请先完成图片选择并关闭上传弹窗'); return; }
+    if (!validateEditCondition()) {
+        showMsg(document.getElementById('edit-msg'), '填写错误，请重新填写', true);
+        return;
+    }
+    const priceVal = document.getElementById('edit-price').value;
+    const price = parseFloat(priceVal);
+    if (priceVal === '' || isNaN(price) || price < 0) {
+        showMsg(document.getElementById('edit-msg'), '价格必须大于等于0', true);
+        return;
+    }
     try {
         const res = await ItemAPI.update(id, {
             title: document.getElementById('edit-title').value,
             description: document.getElementById('edit-description').value,
-            price: parseFloat(document.getElementById('edit-price').value),
+            price: price,
             category: document.getElementById('edit-category').value,
             conditionLevel: parseInt(document.getElementById('edit-conditionLevel').value, 10),
-            images: document.getElementById('edit-images').value
+            images: editUploadedImages.join(',')
         });
         itemData = res.data;
         renderDetail(itemData);
         cancelEdit();
         alert('修改成功，等待重新审核');
         location.reload();
-    } catch (e) { alert(e.message); }
+    } catch (e) { showMsg(document.getElementById('edit-msg'), e.message, true); }
 }
 
 (async () => {

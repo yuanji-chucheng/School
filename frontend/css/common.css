@@ -93,3 +93,18 @@ table th { background: #fafafa; }
 
 .post-list-item { padding: 10px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
 .post-list-item:last-child { border-bottom: none; }
+
+.unread-badge {
+    display: inline-block;
+    background: #f56c6c;
+    color: white;
+    font-size: 11px;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 8px;
+    padding: 0 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+}

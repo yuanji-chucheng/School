@@ -34,4 +34,10 @@
     <update id="markRead">
         UPDATE message SET is_read = 1 WHERE sender_id = #{senderId} AND receiver_id = #{receiverId} AND is_read = 0
     </update>
+    <select id="countUnread" resultType="long">
+        SELECT COUNT(*) FROM message WHERE receiver_id = #{userId} AND is_read = 0
+    </select>
+    <update id="markAllRead">
+        UPDATE message SET is_read = 1 WHERE receiver_id = #{userId} AND is_read = 0
+    </update>
 </mapper>

@@ -6,8 +6,8 @@
         LEFT JOIN sys_user u ON h.user_id = u.id WHERE h.id = #{id}
     </select>
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO help_request(user_id, title, description, reward, order_note, status)
-        VALUES(#{userId}, #{title}, #{description}, #{reward}, #{orderNote}, #{status})
+        INSERT INTO help_request(user_id, title, description, reward, status)
+        VALUES(#{userId}, #{title}, #{description}, #{reward}, #{status})
     </insert>
     <update id="updateStatus">
         UPDATE help_request SET status = #{status} WHERE id = #{id}

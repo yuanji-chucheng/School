@@ -13,4 +13,6 @@ public interface MessageMapper {
     long countConversation(@Param("userId") Long userId, @Param("peerId") Long peerId);
     List<Message> findContacts(@Param("userId") Long userId);
     int markRead(@Param("senderId") Long senderId, @Param("receiverId") Long receiverId);
+    long countUnread(@Param("userId") Long userId);
+    int markAllRead(@Param("userId") Long userId);
 }

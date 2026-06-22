@@ -46,4 +46,12 @@ public class MessageService {
     public List<Message> contacts() {
         return messageMapper.findContacts(UserContext.getUserId());
     }
+
+    public long countUnread() {
+        return messageMapper.countUnread(UserContext.getUserId());
+    }
+
+    public void markAllRead() {
+        messageMapper.markAllRead(UserContext.getUserId());
+    }
 }

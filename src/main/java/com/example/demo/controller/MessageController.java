@@ -36,4 +36,15 @@ public class MessageController {
                                             @RequestParam(defaultValue = "50") int size) {
         return messageService.conversation(peerId, page, size);
     }
+
+    @GetMapping("/unread-count")
+    public Result<Long> unreadCount() {
+        return Result.ok(messageService.countUnread());
+    }
+
+    @PostMapping("/read-all")
+    public Result<Void> readAll() {
+        messageService.markAllRead();
+        return Result.ok("已全部标记为已读", null);
+    }
 }

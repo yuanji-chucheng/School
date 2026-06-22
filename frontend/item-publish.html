@@ -137,12 +137,17 @@ function validateCondition() {
         errEl.textContent = '请填写新旧程度（1-5）';
         return false;
     }
-    if (!/^\d+$/.test(val)) {
+    const num = parseInt(val, 10);
+    if (isNaN(num)) {
         input.classList.add('input-error');
         errEl.textContent = '新旧程度必须为整数';
         return false;
     }
-    const num = parseInt(val, 10);
+    if (!Number.isInteger(num)) {
+        input.classList.add('input-error');
+        errEl.textContent = '新旧程度必须为整数';
+        return false;
+    }
     if (num < 1) {
         input.classList.add('input-error');
         errEl.textContent = '新旧程度不能小于1，最低为1（全新）';

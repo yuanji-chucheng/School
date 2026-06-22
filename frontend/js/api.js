@@ -31,6 +31,10 @@ function logout() {
 
 /** 上传图片文件 */
 async function uploadFile(file) {
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+        throw new Error('图片大小超过5MB限制，请选择更小的图片');
+    }
     const formData = new FormData();
     formData.append('file', file);
     const headers = {};
@@ -159,7 +163,9 @@ const ReportAPI = {
 const MessageAPI = {
     send: (data) => post('/messages', data),
     contacts: () => get('/messages/contacts'),
-    conversation: (peerId, page, size) => get(`/messages/conversation/${peerId}?page=${page}&size=${size}`)
+    conversation: (peerId, page, size) => get(`/messages/conversation/${peerId}?page=${page}&size=${size}`),
+    unreadCount: () => get('/messages/unread-count'),
+    readAll: () => post('/messages/read-all', {})
 };
 
 // ========== 工具函数 ==========
@@ -177,7 +183,7 @@ function showMsg(el, msg, isError) {
     el.innerHTML = `<div class="msg-box ${isError ? 'msg-error' : 'msg-success'}">${msg}</div>`;
 }
 
-function renderNav() {
+async function renderNav() {
     const user = getUser();
     const nav = document.getElementById('nav-links');
     if (!nav) return;
@@ -189,7 +195,14 @@ function renderNav() {
         if (user.role !== 1) {
             html += `<a href="orders.html">我的订单</a>`;
         }
-        html += `<a href="messages.html">私信</a><a href="profile.html">个人中心</a>`;
+        let unreadCount = '';
+        try {
+            const res = await MessageAPI.unreadCount();
+            if (res.data > 0) {
+                unreadCount = `<span class="unread-badge">${res.data}</span>`;
+            }
+        } catch (e) {}
+        html += `<a href="messages.html" id="msg-link">私信${unreadCount}</a><a href="profile.html">个人中心</a>`;
         if (user.role === 1) html += '<a href="admin-panel.html">管理后台</a>';
         html += `<a href="#" onclick="logout()">退出(${user.nickname})</a>`;
     } else {
