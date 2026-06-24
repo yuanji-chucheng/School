@@ -1,0 +1,16 @@
+# 阿里云OSS配置模板 - 项目组成员请复制此文件为 application-local.yml 并填写真实密钥
+# 注意：application-local.yml 文件不会被提交到Git，确保密钥安全
+
+aliyun:
+  oss:
+    enabled: true
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    access-key-id: 请填写你的阿里云AccessKey-ID
+    access-key-secret: 请填写你的阿里云AccessKey-Secret
+    bucket-name: congrongyingdui
+
+# 提示：
+# 1. 复制此文件为 application-local.yml
+# 2. 将 access-key-id 和 access-key-secret 替换为真实的阿里云密钥
+# 3. 确保阿里云OSS Bucket权限设置为"公共读"，这样所有人都能看到图片
+# 4. 项目组所有成员使用同一个Bucket，上传的图片都能共享
