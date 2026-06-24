@@ -54,6 +54,8 @@ public class OrderService {
         order.setPrice(item.getPrice());
         order.setStatus(0); // 待付款
         orderMapper.insert(order);
+        item.setStatus(4); // 下单后商品下架，防止被其他买家购买
+        itemMapper.update(item);
         notificationService.send(item.getSellerId(), "新订单", "有人下单购买《" + item.getTitle() + "》", "ORDER");
         return orderMapper.findById(order.getId());
     }
@@ -72,11 +74,10 @@ public class OrderService {
             item.setStatus(3);
             itemMapper.update(item);
         }
-        // 取消时恢复物品
+        // 取消时恢复物品上架
         if (newStatus == 4) {
             Item item = itemMapper.findById(order.getItemId());
-            if (item.getStatus() == 3) item.setStatus(1);
-            else item.setStatus(1);
+            item.setStatus(1); // 重新上架
             itemMapper.update(item);
         }
         String msg = switch (newStatus) {

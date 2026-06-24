@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.common.BusinessException;
 import com.example.demo.common.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +25,7 @@ public class UploadController {
     private String uploadDir;
 
     @PostMapping
-    public Result<String> upload(@RequestParam("file") MultipartFile file) throws IOException {
+    public Result<String> upload(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("请选择图片文件");
         }
@@ -45,6 +46,7 @@ public class UploadController {
         };
         String filename = UUID.randomUUID() + ext;
         Files.write(dir.resolve(filename), file.getBytes());
-        return Result.ok("/uploads/" + filename);
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        return Result.ok(baseUrl + "/uploads/" + filename);
     }
 }

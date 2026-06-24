@@ -31,4 +31,8 @@ public class NotificationQueryService {
     public void markAllRead() {
         notificationMapper.markAllRead(UserContext.getUserId());
     }
+
+    public long countUnread() {
+        return notificationMapper.countUnread(UserContext.getUserId());
+    }
 }

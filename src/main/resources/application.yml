@@ -20,6 +20,7 @@ mybatis:
 app:
   browser:
     auto-open: true
+  upload-dir: ${user.dir}/uploads
 
 # JWT 配置
 jwt:

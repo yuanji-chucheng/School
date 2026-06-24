@@ -99,17 +99,17 @@ document.getElementById('file-input').addEventListener('change', function(e) {
 });
 
 async function confirmUpload() {
-    if (pendingFiles.length === 0) { alert('请先选择图片'); return; }
-    try {
-        for (const file of pendingFiles) {
-            if (uploadedImages.length >= 6) break;
-            const url = await uploadFile(file);
-            uploadedImages.push(url.startsWith('http') ? url : window.location.origin + url);
-        }
-        renderImages();
-        closeUploadModal();
-    } catch (e) { alert(e.message); }
-}
+        if (pendingFiles.length === 0) { alert('请先选择图片'); return; }
+        try {
+            for (const file of pendingFiles) {
+                if (uploadedImages.length >= 6) break;
+                const url = await uploadFile(file);
+                uploadedImages.push(url);
+            }
+            renderImages();
+            closeUploadModal();
+        } catch (e) { alert(e.message); }
+    }
 
 function renderImages() {
     const area = document.getElementById('image-area');

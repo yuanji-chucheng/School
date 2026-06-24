@@ -109,7 +109,7 @@ async function confirmEditUpload() {
         for (const file of editPendingFiles) {
             if (editUploadedImages.length >= 6) break;
             const url = await uploadFile(file);
-            editUploadedImages.push(url.startsWith('http') ? url : window.location.origin + url);
+            editUploadedImages.push(url);
         }
         renderEditImages();
         closeEditUploadModal();
@@ -229,6 +229,16 @@ async function saveEdit() {
     } catch (e) { showMsg(document.getElementById('edit-msg'), e.message, true); }
 }
 
+async function hasPurchased(itemId) {
+    if (!user) return false;
+    try {
+        const data = await OrderAPI.list(1, 100);
+        return data.rows.some(o => o.itemId === itemId && o.buyerId === user.userId && o.status > 0);
+    } catch (e) {
+        return false;
+    }
+}
+
 (async () => {
     const res = await ItemAPI.detail(id);
     itemData = res.data;
@@ -243,8 +253,11 @@ async function saveEdit() {
     }
 
     let actions = '';
-    if (user && itemData.status === 1 && itemData.sellerId !== user.userId) {
+    const purchased = await hasPurchased(parseInt(id));
+    if (user && itemData.status === 1 && itemData.sellerId !== user.userId && !purchased) {
         actions += `<button class="btn btn-primary" onclick="buyItem()">立即购买</button> `;
+    }
+    if (user && itemData.sellerId !== user.userId) {
         actions += `<button class="btn btn-default" onclick="contactSeller(${itemData.sellerId})">联系卖家</button> `;
     }
     if (user && itemData.sellerId === user.userId) {

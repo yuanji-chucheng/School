@@ -34,4 +34,9 @@ public class NotificationController {
         notificationQueryService.markAllRead();
         return Result.ok(null);
     }
+
+    @GetMapping("/unread-count")
+    public Result<Long> unreadCount() {
+        return Result.ok(notificationQueryService.countUnread());
+    }
 }

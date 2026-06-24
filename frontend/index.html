@@ -31,7 +31,7 @@
 renderNav();
 (async () => {
     try {
-        const items = await ItemAPI.search({ page: 1, size: 8 });
+        const items = await ItemAPI.search({ page: 1, size: 8, status: 1 });
         document.getElementById('latest-items').innerHTML = items.rows.map(i => `
             <div class="item-card" onclick="location.href='item-detail.html?id=${i.id}'">
                 <img src="${getFirstImage(i.images)}" alt="">
@@ -39,15 +39,21 @@ renderNav();
                     <div class="price">¥${i.price}</div>
                     <div class="title">${i.title}</div>
                     <span class="tag">${i.category}</span>
+                    <div style="font-size:12px;color:#999;margin-top:4px;">发布于 ${i.createTime}</div>
                 </div>
             </div>`).join('') || '<p>暂无物品</p>';
 
         const help = await HelpAPI.list({ status: 1, page: 1, size: 5 });
         document.getElementById('latest-help').innerHTML = help.rows.map(h => `
-            <div style="padding:8px 0;border-bottom:1px solid #eee;">
-                <a href="help-detail.html?id=${h.id}">${h.title}</a>
-                <span class="tag">酬劳 ¥${h.reward || 0}</span>
-                <span style="color:#999;margin-left:8px;">${h.publisherNickname}</span>
+            <div style="padding:8px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <a href="help-detail.html?id=${h.id}">${h.title}</a>
+                    <span style="color:#999;margin-left:8px;font-size:12px;">${h.publisherNickname}</span>
+                </div>
+                <div style="display:flex;align-items:center;">
+                    <span class="tag">酬劳 ¥${h.reward || 0}</span>
+                    <span style="color:#999;margin-left:8px;font-size:12px;">${h.createTime}</span>
+                </div>
             </div>`).join('') || '<p>暂无互助需求</p>';
     } catch (e) { console.error(e); }
 })();

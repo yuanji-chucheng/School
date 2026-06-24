@@ -147,8 +147,9 @@ const HelpAPI = {
 // ========== 通知 API ==========
 const NotificationAPI = {
     list: (page, size) => get(`/notifications?page=${page}&size=${size}`),
-    markRead: (id) => post('/notifications/' + id + '/read', {}),
-    markAllRead: () => post('/notifications/read-all', {})
+    markRead: (id) => post(`/notifications/${id}/read`, {}),
+    markAllRead: () => post('/notifications/read-all', {}),
+    unreadCount: () => get('/notifications/unread-count')
 };
 
 // ========== 举报 API ==========
@@ -195,14 +196,25 @@ async function renderNav() {
         if (user.role !== 1) {
             html += `<a href="orders.html">我的订单</a>`;
         }
-        let unreadCount = '';
+        
+        let msgUnread = '';
         try {
-            const res = await MessageAPI.unreadCount();
-            if (res.data > 0) {
-                unreadCount = `<span class="unread-badge">${res.data}</span>`;
+            const msgRes = await MessageAPI.unreadCount();
+            if (msgRes.data > 0) {
+                msgUnread = `<span class="unread-badge">${msgRes.data}</span>`;
             }
         } catch (e) {}
-        html += `<a href="messages.html" id="msg-link">私信${unreadCount}</a><a href="profile.html">个人中心</a>`;
+        
+        let notifyUnread = '';
+        try {
+            const notifyRes = await NotificationAPI.unreadCount();
+            if (notifyRes.data > 0) {
+                notifyUnread = `<span class="unread-badge">${notifyRes.data}</span>`;
+            }
+        } catch (e) {}
+        
+        html += `<a href="messages.html" id="msg-link">私信${msgUnread}</a>`;
+        html += `<a href="profile.html" id="notify-link">个人中心${notifyUnread}</a>`;
         if (user.role === 1) html += '<a href="admin-panel.html">管理后台</a>';
         html += `<a href="#" onclick="logout()">退出(${user.nickname})</a>`;
     } else {

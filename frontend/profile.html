@@ -21,7 +21,7 @@
         <div id="my-help"></div>
     </div>
     <div class="card">
-        <div class="card-title">系统通知 <button class="btn btn-default" onclick="markAllRead()">全部已读</button></div>
+        <div class="card-title">系统通知 <span id="notify-badge" style="display:none;" class="unread-badge"></span> <button class="btn btn-default" onclick="markAllRead()">全部已读</button></div>
         <div id="notifications"></div>
     </div>
 </div>
@@ -58,7 +58,6 @@ async function loadProfile() {
 }
 
 loadProfile();
-loadNotifications();
 
 async function updateProfile() {
     try {
@@ -70,18 +69,68 @@ async function updateProfile() {
         location.reload();
     } catch (e) { alert(e.message); }
 }
+let notifyRefreshTimer = null;
+
 async function loadNotifications() {
     const data = await NotificationAPI.list(1, 20);
+    const unreadCount = data.rows.filter(n => !n.isRead).length;
+    const badge = document.getElementById('notify-badge');
+    if (unreadCount > 0) {
+        badge.textContent = unreadCount;
+        badge.style.display = 'inline-block';
+    } else {
+        badge.style.display = 'none';
+    }
     document.getElementById('notifications').innerHTML = data.rows.map(n =>
-        `<div style="padding:8px 0;border-bottom:1px solid #eee;${n.isRead?'':'font-weight:bold;'}">
+        `<div style="padding:8px 0;border-bottom:1px solid #eee;${n.isRead?'':'background:#fff3f3;'}">
             <strong>${n.title}</strong> - ${n.content}
             <span style="color:#999;font-size:12px;">${n.createTime}</span>
+            ${!n.isRead ? '<span class="tag" style="background:#f56c6c;color:white;">未读</span>' : ''}
         </div>`).join('') || '<p>暂无通知</p>';
 }
+
 async function markAllRead() {
     await NotificationAPI.markAllRead();
     loadNotifications();
+    refreshNavBadge();
 }
+
+async function refreshNavBadge() {
+    const notifyLink = document.getElementById('notify-link');
+    if (notifyLink) {
+        const res = await NotificationAPI.unreadCount();
+        if (res.data > 0) {
+            notifyLink.innerHTML = `个人中心<span class="unread-badge">${res.data}</span>`;
+        } else {
+            notifyLink.innerHTML = '个人中心';
+        }
+    }
+}
+
+function startNotifyRefresh() {
+    notifyRefreshTimer = setInterval(async () => {
+        try {
+            await loadNotifications();
+        } catch (e) {}
+    }, 5000);
+}
+
+function stopNotifyRefresh() {
+    if (notifyRefreshTimer) {
+        clearInterval(notifyRefreshTimer);
+        notifyRefreshTimer = null;
+    }
+}
+
+window.addEventListener('beforeunload', stopNotifyRefresh);
+
+async function init() {
+    await loadNotifications();
+    await markAllRead();
+    startNotifyRefresh();
+}
+
+init();
 </script>
 </body>
 </html>
