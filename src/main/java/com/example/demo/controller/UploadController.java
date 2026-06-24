@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.common.BusinessException;
 import com.example.demo.common.Result;
+import com.example.demo.util.OssUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +15,6 @@ import java.nio.file.Paths;
 import java.util.Set;
 import java.util.UUID;
 
-/** 图片上传接口 */
 @RestController
 @RequestMapping("/api/upload")
 public class UploadController {
@@ -23,6 +23,12 @@ public class UploadController {
 
     @Value("${app.upload-dir:uploads}")
     private String uploadDir;
+
+    private final OssUtil ossUtil;
+
+    public UploadController(OssUtil ossUtil) {
+        this.ossUtil = ossUtil;
+    }
 
     @PostMapping
     public Result<String> upload(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws IOException {
@@ -36,6 +42,17 @@ public class UploadController {
         if (file.getSize() > 5 * 1024 * 1024) {
             throw new BusinessException("单张图片不能超过5MB");
         }
+
+        if (ossUtil.isEnabled()) {
+            try {
+                String url = ossUtil.upload(file);
+                return Result.ok(url);
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new BusinessException("OSS上传失败：" + e.getMessage() + "，请检查OSS配置或Bucket权限");
+            }
+        }
+
         Path dir = Paths.get(uploadDir).toAbsolutePath();
         Files.createDirectories(dir);
         String ext = switch (contentType) {

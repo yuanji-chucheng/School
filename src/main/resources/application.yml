@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: local
   application:
     name: campus-trade
   datasource:
@@ -26,3 +28,12 @@ app:
 jwt:
   secret: campus-trade-jwt-secret-key-2024-demo
   expire-hours: 24
+
+# 阿里云OSS配置
+aliyun:
+  oss:
+    enabled: false
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    access-key-id: your-access-key-id
+    access-key-secret: your-access-key-secret
+    bucket-name: your-bucket-name
