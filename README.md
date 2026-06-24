@@ -61,7 +61,7 @@ mysql -u root -p < sql/schema.sql
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/campus_trade?...
+    url: jdbc:mysql://rm-bp1gpy26lasmevofezo.mysql.rds.aliyuncs.com:3306/campus_trade?...
     username: root
     password: 你的密码
 ```
