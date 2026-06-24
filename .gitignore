@@ -35,3 +35,6 @@ build/
 ### Local Config ###
 application-local.yml
 src/main/resources/application-local.yml
+
+### Uploads ###
+uploads/
