@@ -79,18 +79,6 @@ function stopRefresh() {
     }
 }
 
-async function refreshNavBadge() {
-    const msgLink = document.getElementById('msg-link');
-    if (msgLink) {
-        const res = await MessageAPI.unreadCount();
-        if (res.data > 0) {
-            msgLink.innerHTML = `私信<span class="unread-badge">${res.data}</span>`;
-        } else {
-            msgLink.innerHTML = '私信';
-        }
-    }
-}
-
 async function sendMsg() {
     if (!currentPeerId) { alert('请选择联系人'); return; }
     const content = document.getElementById('msg-input').value;

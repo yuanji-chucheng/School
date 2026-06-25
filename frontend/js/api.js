@@ -197,21 +197,13 @@ async function renderNav() {
             html += `<a href="orders.html">我的订单</a>`;
         }
         
-        let msgUnread = '';
-        try {
-            const msgRes = await MessageAPI.unreadCount();
-            if (msgRes.data > 0) {
-                msgUnread = `<span class="unread-badge">${msgRes.data}</span>`;
-            }
-        } catch (e) {}
+        const [msgRes, notifyRes] = await Promise.all([
+            MessageAPI.unreadCount().catch(() => ({ data: 0 })),
+            NotificationAPI.unreadCount().catch(() => ({ data: 0 }))
+        ]);
         
-        let notifyUnread = '';
-        try {
-            const notifyRes = await NotificationAPI.unreadCount();
-            if (notifyRes.data > 0) {
-                notifyUnread = `<span class="unread-badge">${notifyRes.data}</span>`;
-            }
-        } catch (e) {}
+        const msgUnread = msgRes.data > 0 ? `<span class="unread-badge">${msgRes.data}</span>` : '';
+        const notifyUnread = notifyRes.data > 0 ? `<span class="unread-badge">${notifyRes.data}</span>` : '';
         
         html += `<a href="messages.html" id="msg-link">私信${msgUnread}</a>`;
         html += `<a href="profile.html" id="notify-link">个人中心${notifyUnread}</a>`;
@@ -234,4 +226,28 @@ function requireLogin() {
 function getFirstImage(images) {
     if (!images) return 'https://via.placeholder.com/300x200?text=No+Image';
     return images.split(',')[0];
+}
+
+async function refreshNavBadge() {
+    const user = getUser();
+    if (!user) return;
+    
+    const [msgRes, notifyRes] = await Promise.all([
+        MessageAPI.unreadCount().catch(() => ({ data: 0 })),
+        NotificationAPI.unreadCount().catch(() => ({ data: 0 }))
+    ]);
+    
+    const msgLink = document.getElementById('msg-link');
+    if (msgLink) {
+        msgLink.innerHTML = msgRes.data > 0 
+            ? `私信<span class="unread-badge">${msgRes.data}</span>` 
+            : '私信';
+    }
+    
+    const notifyLink = document.getElementById('notify-link');
+    if (notifyLink) {
+        notifyLink.innerHTML = notifyRes.data > 0 
+            ? `个人中心<span class="unread-badge">${notifyRes.data}</span>` 
+            : '个人中心';
+    }
 }

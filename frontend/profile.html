@@ -95,18 +95,6 @@ async function markAllRead() {
     refreshNavBadge();
 }
 
-async function refreshNavBadge() {
-    const notifyLink = document.getElementById('notify-link');
-    if (notifyLink) {
-        const res = await NotificationAPI.unreadCount();
-        if (res.data > 0) {
-            notifyLink.innerHTML = `个人中心<span class="unread-badge">${res.data}</span>`;
-        } else {
-            notifyLink.innerHTML = '个人中心';
-        }
-    }
-}
-
 function startNotifyRefresh() {
     notifyRefreshTimer = setInterval(async () => {
         try {
