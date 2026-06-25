@@ -90,15 +90,6 @@ async function saveEdit() {
     } catch (e) { alert(e.message); }
 }
 
-async function saveOrderNote() {
-    try {
-        const note = document.getElementById('owner-orderNote').value;
-        const res = await HelpAPI.updateOrderNote(id, note);
-        helpData = res.data;
-        alert('备注已保存');
-    } catch (e) { alert(e.message); }
-}
-
 (async () => {
     const res = await HelpAPI.detail(id);
     helpData = res.data;
