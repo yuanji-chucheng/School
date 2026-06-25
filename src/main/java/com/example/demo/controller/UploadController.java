@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 import java.util.UUID;
-
+/** 上传图片 **/
 @RestController
 @RequestMapping("/api/upload")
 public class UploadController {

@@ -25,6 +25,13 @@
     <delete id="deleteById">
         DELETE FROM sys_user WHERE id = #{id} AND role = 0
     </delete>
+    <delete id="deleteBatch">
+        DELETE FROM sys_user WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND role = 0
+    </delete>
     <select id="findPending" resultType="User">
         SELECT * FROM sys_user WHERE status = 0 ORDER BY create_time DESC LIMIT #{offset}, #{limit}
     </select>

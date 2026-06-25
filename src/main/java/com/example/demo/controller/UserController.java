@@ -5,6 +5,7 @@ import com.example.demo.common.Result;
 import com.example.demo.dto.AuditRequest;
 import com.example.demo.dto.PasswordResetRequest;
 import com.example.demo.entity.User;
+import java.util.List;
 import com.example.demo.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,6 +68,13 @@ public class UserController {
     public Result<Void> deleteStudent(@PathVariable Long id) {
         userService.deleteStudent(id);
         return Result.ok("删除成功", null);
+    }
+
+    /** 管理员：批量删除学生 */
+    @DeleteMapping("/admin/batch")
+    public Result<Void> deleteStudentsBatch(@RequestBody List<Long> ids) {
+        userService.deleteStudentsBatch(ids);
+        return Result.ok("批量删除成功", null);
     }
 
     /** 管理员：重置学生密码 */

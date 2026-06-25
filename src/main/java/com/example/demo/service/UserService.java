@@ -7,11 +7,14 @@ import com.example.demo.dto.LoginResponse;
 import com.example.demo.dto.PasswordResetRequest;
 import com.example.demo.dto.RegisterRequest;
 import com.example.demo.entity.User;
+import com.example.demo.mapper.HelpRequestMapper;
+import com.example.demo.mapper.ItemMapper;
 import com.example.demo.mapper.UserMapper;
 import com.example.demo.util.JwtUtil;
 import com.example.demo.util.PasswordUtil;
 import com.example.demo.util.UserContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -20,11 +23,16 @@ import java.util.List;
 public class UserService {
 
     private final UserMapper userMapper;
+    private final ItemMapper itemMapper;
+    private final HelpRequestMapper helpRequestMapper;
     private final JwtUtil jwtUtil;
     private final NotificationService notificationService;
 
-    public UserService(UserMapper userMapper, JwtUtil jwtUtil, NotificationService notificationService) {
+    public UserService(UserMapper userMapper, ItemMapper itemMapper, HelpRequestMapper helpRequestMapper,
+                       JwtUtil jwtUtil, NotificationService notificationService) {
         this.userMapper = userMapper;
+        this.itemMapper = itemMapper;
+        this.helpRequestMapper = helpRequestMapper;
         this.jwtUtil = jwtUtil;
         this.notificationService = notificationService;
     }
@@ -120,13 +128,33 @@ public class UserService {
         return new PageResult<>(rows, userMapper.countApprovedStudents());
     }
 
-    /** 管理员：删除学生 */
+    /** 管理员：删除学生（级联删除相关帖子） */
+    @Transactional
     public void deleteStudent(Long userId) {
         checkAdmin();
         User user = userMapper.findById(userId);
         if (user == null) throw new BusinessException("用户不存在");
         if (user.getRole() != 0) throw new BusinessException("只能删除学生账号");
+        // 级联删除用户发布的物品和互助帖
+        itemMapper.deleteBySellerId(userId);
+        helpRequestMapper.deleteByUserId(userId);
         if (userMapper.deleteById(userId) == 0) throw new BusinessException("删除失败");
+    }
+
+    /** 管理员：批量删除学生（级联删除相关帖子） */
+    @Transactional
+    public void deleteStudentsBatch(List<Long> userIds) {
+        checkAdmin();
+        if (userIds == null || userIds.isEmpty()) {
+            throw new BusinessException("请选择要删除的学生");
+        }
+        // 级联删除每个用户发布的物品和互助帖
+        for (Long userId : userIds) {
+            itemMapper.deleteBySellerId(userId);
+            helpRequestMapper.deleteByUserId(userId);
+        }
+        int deleted = userMapper.deleteBatch(userIds);
+        if (deleted == 0) throw new BusinessException("删除失败，没有符合条件的学生");
     }
 
     /** 管理员：重置学生密码 */

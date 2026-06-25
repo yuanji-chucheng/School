@@ -52,4 +52,7 @@
     <select id="countPending" resultType="long">
         SELECT COUNT(*) FROM item WHERE status = 0
     </select>
+    <delete id="deleteBySellerId">
+        DELETE FROM item WHERE seller_id = #{sellerId}
+    </delete>
 </mapper>

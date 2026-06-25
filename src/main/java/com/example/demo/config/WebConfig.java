@@ -23,12 +23,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String frontendPath = Paths.get("frontend").toAbsolutePath().toUri().toString();
-        registry.addResourceHandler("/**")
-                .addResourceLocations(frontendPath + "/");
         String uploadPath = Paths.get("uploads").toAbsolutePath().toUri().toString();
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadPath);
+        registry.addResourceHandler("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/springdoc-openapi-starter-webmvc-ui/");
+        String frontendPath = Paths.get("frontend").toAbsolutePath().toUri().toString();
+        registry.addResourceHandler("/**")
+                .addResourceLocations(frontendPath + "/");
     }
 
     @Override

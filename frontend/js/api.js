@@ -97,6 +97,7 @@ const UserAPI = {
     all: (page, size) => get(`/users/admin/list?page=${page}&size=${size}`),
     audit: (id, approved, reason) => post(`/users/${id}/audit`, { approved, reason }),
     deleteStudent: (id) => request(`/users/${id}/admin`, { method: 'DELETE' }),
+    deleteStudentsBatch: (ids) => request('/users/admin/batch', { method: 'DELETE', body: JSON.stringify(ids) }),
     resetPassword: (id, newPassword) => post(`/users/${id}/reset-password`, { newPassword })
 };
 
@@ -128,7 +129,6 @@ const OrderAPI = {
 const HelpAPI = {
     publish: (data) => post('/help', data),
     update: (id, data) => put('/help/' + id, data),
-    updateOrderNote: (id, orderNote) => put('/help/' + id + '/order-note', { orderNote }),
     list: (params) => {
         const qs = new URLSearchParams(params).toString();
         return get('/help?' + qs);

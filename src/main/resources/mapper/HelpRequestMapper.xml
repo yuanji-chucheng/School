@@ -18,7 +18,6 @@
             <if test="title != null">title = #{title},</if>
             <if test="description != null">description = #{description},</if>
             <if test="reward != null">reward = #{reward},</if>
-            <if test="orderNote != null">order_note = #{orderNote},</if>
             <if test="status != null">status = #{status},</if>
         </set>
         WHERE id = #{id}
@@ -47,4 +46,7 @@
             <if test="userId != null">AND h.user_id = #{userId}</if>
         </where>
     </select>
+    <delete id="deleteByUserId">
+        DELETE FROM help_request WHERE user_id = #{userId}
+    </delete>
 </mapper>

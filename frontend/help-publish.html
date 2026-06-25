@@ -17,11 +17,6 @@
         <div class="form-group"><label>标题</label><input id="title" placeholder="如：代取快递"></div>
         <div class="form-group"><label>描述</label><textarea id="description"></textarea></div>
         <div class="form-group"><label>酬劳(元)</label><input id="reward" type="number" step="0.01" min="0"></div>
-        <div class="form-group">
-            <label>订单备注</label>
-            <textarea id="orderNote" placeholder="仅接单者接单后可看到，不在公共帖子显示"></textarea>
-            <p style="color:#999;font-size:12px;margin-top:4px;">此备注不会在互助列表公开展示，接单后接单者可见，您可随时修改</p>
-        </div>
         <button class="btn btn-primary" onclick="publish()">发布</button>
     </div>
 </div>
@@ -40,8 +35,7 @@ async function publish() {
     if (isNaN(reward) || reward < 0) { alert('酬劳必须大于等于0'); return; }
     try {
         await HelpAPI.publish({
-            title, description, reward,
-            orderNote: document.getElementById('orderNote').value.trim()
+            title, description, reward
         });
         showMsg(document.getElementById('msg'), '发布成功，等待管理员审核', false);
     } catch (e) { showMsg(document.getElementById('msg'), e.message, true); }

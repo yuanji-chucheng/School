@@ -59,7 +59,6 @@ public class HelpService {
         req.setTitle(dto.getTitle().trim());
         req.setDescription(dto.getDescription().trim());
         req.setReward(dto.getReward());
-        req.setOrderNote(dto.getOrderNote());
         req.setStatus(0); // 待审核
         requestMapper.insert(req);
         return requestMapper.findById(req.getId());
@@ -88,34 +87,15 @@ public class HelpService {
         }
         HelpRequest patch = new HelpRequest();
         patch.setId(id);
-        if (req.getStatus() >= 2) {
-            patch.setOrderNote(dto.getOrderNote());
-        } else {
-            if (dto.getTitle() != null) patch.setTitle(dto.getTitle().trim());
-            if (dto.getDescription() != null) patch.setDescription(dto.getDescription().trim());
-            if (dto.getReward() != null) {
-                if (dto.getReward().compareTo(BigDecimal.ZERO) < 0) {
-                    throw new BusinessException("酬劳不能小于0");
-                }
-                patch.setReward(dto.getReward());
+        if (dto.getTitle() != null) patch.setTitle(dto.getTitle().trim());
+        if (dto.getDescription() != null) patch.setDescription(dto.getDescription().trim());
+        if (dto.getReward() != null) {
+            if (dto.getReward().compareTo(BigDecimal.ZERO) < 0) {
+                throw new BusinessException("酬劳不能小于0");
             }
-            if (dto.getOrderNote() != null) patch.setOrderNote(dto.getOrderNote());
-            if (req.getStatus() == 1) patch.setStatus(0);
+            patch.setReward(dto.getReward());
         }
-        requestMapper.update(patch);
-        return requestMapper.findById(id);
-    }
-
-    /** 仅更新订单备注 */
-    public HelpRequest updateOrderNote(Long id, String orderNote) {
-        HelpRequest req = requestMapper.findById(id);
-        if (req == null) throw new BusinessException("需求不存在");
-        if (!req.getUserId().equals(UserContext.getUserId())) {
-            throw new BusinessException("无权修改");
-        }
-        HelpRequest patch = new HelpRequest();
-        patch.setId(id);
-        patch.setOrderNote(orderNote);
+        if (req.getStatus() == 1) patch.setStatus(0);
         requestMapper.update(patch);
         return requestMapper.findById(id);
     }

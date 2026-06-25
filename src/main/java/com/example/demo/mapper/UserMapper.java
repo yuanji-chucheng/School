@@ -16,4 +16,5 @@ public interface UserMapper {
     List<User> findApprovedStudents(@Param("offset") int offset, @Param("limit") int limit);
     long countApprovedStudents();
     int deleteById(Long id);
+    int deleteBatch(@Param("ids") List<Long> ids);
 }

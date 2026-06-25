@@ -16,4 +16,5 @@ public interface HelpRequestMapper {
                              @Param("offset") int offset,
                              @Param("limit") int limit);
     long countSearch(@Param("status") Integer status, @Param("userId") Long userId);
+    int deleteByUserId(@Param("userId") Long userId);
 }

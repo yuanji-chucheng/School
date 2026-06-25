@@ -12,7 +12,6 @@ public class HelpRequest {
     private String title;
     private String description;
     private BigDecimal reward;
-    private String orderNote;
     /** 0待审核 1待接单 2进行中 3已完成 4已取消 5已下架/已驳回 */
     private Integer status;
     private LocalDateTime createTime;

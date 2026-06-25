@@ -26,4 +26,5 @@ public interface ItemMapper {
                      @Param("sellerId") Long sellerId);
     List<Item> findPending(@Param("offset") int offset, @Param("limit") int limit);
     long countPending();
+    int deleteBySellerId(@Param("sellerId") Long sellerId);
 }

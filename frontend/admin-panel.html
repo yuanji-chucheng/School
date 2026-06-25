@@ -25,7 +25,11 @@
     </div>
     <div class="card" id="panel-students" style="display:none;">
         <div class="card-title">已通过注册的学生</div>
-        <table><thead><tr><th>学号</th><th>昵称</th><th>信用分</th><th>注册时间</th><th>操作</th></tr></thead>
+        <div style="margin-bottom:10px;">
+            <button class="btn btn-default" onclick="toggleSelectAll()">全选/反选</button>
+            <button class="btn btn-danger" onclick="batchDeleteStudents()">批量删除</button>
+        </div>
+        <table><thead><tr><th><input type="checkbox" onchange="selectAll(this)"></th><th>学号</th><th>昵称</th><th>信用分</th><th>注册时间</th><th>操作</th></tr></thead>
         <tbody id="student-list"></tbody></table>
     </div>
     <div class="card" id="panel-items" style="display:none;">
@@ -78,12 +82,34 @@ async function auditUser(id, approved) {
 async function loadStudents() {
     const data = await UserAPI.students(1, 50);
     document.getElementById('student-list').innerHTML = data.rows.map(u =>
-        `<tr><td>${u.studentId}</td><td>${u.nickname}</td><td>${u.creditScore}</td><td>${u.createTime}</td>
+        `<tr><td><input type="checkbox" class="student-check" value="${u.id}"></td><td>${u.studentId}</td><td>${u.nickname}</td><td>${u.creditScore}</td><td>${u.createTime}</td>
         <td>
             <button class="btn btn-primary" onclick="resetPassword(${u.id})">修改密码</button>
             <button class="btn btn-danger" onclick="deleteStudent(${u.id})">删除</button>
         </td></tr>`
-    ).join('') || '<tr><td colspan="5">暂无</td></tr>';
+    ).join('') || '<tr><td colspan="6">暂无</td></tr>';
+}
+function selectAll(checkbox) {
+    document.querySelectorAll('.student-check').forEach(c => c.checked = checkbox.checked);
+}
+function toggleSelectAll() {
+    const checks = document.querySelectorAll('.student-check');
+    const allChecked = Array.from(checks).every(c => c.checked);
+    checks.forEach(c => c.checked = !allChecked);
+}
+async function batchDeleteStudents() {
+    const checked = document.querySelectorAll('.student-check:checked');
+    if (checked.length === 0) {
+        alert('请选择要删除的学生');
+        return;
+    }
+    if (!confirm(`确定删除选中的 ${checked.length} 名学生？`)) return;
+    try {
+        const ids = Array.from(checked).map(c => parseInt(c.value));
+        await UserAPI.deleteStudentsBatch(ids);
+        alert('批量删除成功');
+        loadStudents();
+    } catch (e) { alert(e.message); }
 }
 async function resetPassword(id) {
     const pwd = prompt('请输入新密码：');
