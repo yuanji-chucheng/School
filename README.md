@@ -8,7 +8,7 @@
 |------|------|
 | 用户注册登录 | 学号注册，管理员审核后可登录；角色：学生/管理员 |
 | 二手物品 | 发布（分类、新旧、图片）、管理员审核、搜索浏览 |
-| 交易订单 | 下单→待付款→待发货→待收货→已完成；可取消待付款订单 |
+| 交易订单 | 下单→待付款→待发货→待收货→已完成；买卖双方均可取消待付款订单（卖家取消后物品自动重新上架） |
 | 交易评价 | 完成后双方互评，影响信用分 |
 | 互助服务 | 发布需求→接单→进行中→完成；完成后互评 |
 | 站内私信 | 买卖双方私信沟通 |
@@ -22,7 +22,9 @@
 ```
 demo1/
 ├── sql/
-│   ├── schema.sql              # 数据库建表脚本
+│   ├── init.sql                # 【本地初始化】完整建库建表脚本（推荐使用）
+│   ├── schema.sql              # 历史建表脚本
+│   ├── migration_v2.sql        # 增量迁移脚本
 │   └── cleanup_database.sql    # 数据库清理脚本
 ├── frontend/                   # 前端页面（独立部署或用 Live Server 打开）
 │   ├── css/common.css          # 公共样式
@@ -45,6 +47,7 @@ demo1/
 └── src/main/java/com/example/demo/
     ├── controller/             # REST 接口层
     ├── service/                # 业务逻辑层
+    │   └── storage/            # 文件存储：StorageService 接口 + Local/OSS 实现
     ├── mapper/                 # MyBatis 接口
     ├── entity/                 # 实体类
     ├── dto/                    # 数据传输对象
@@ -59,31 +62,47 @@ demo1/
 - Maven 3.6+
 - MySQL 8.0+
 
-## 快速启动
+## 本地部署与快速启动
 
-### 1. 初始化数据库
+### 1. 新建数据库并执行初始化脚本
+
+先在本地 MySQL 中新建 `campus_trade` 数据库，再执行 `sql/init.sql`：
 
 ```bash
-mysql -u root -p < sql/schema.sql
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS campus_trade DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p campus_trade < sql/init.sql
 ```
 
-默认创建数据库 `campus_trade`，并初始化管理员账号：
+> `init.sql` 内含完整的建库、建表语句，也可以直接执行：
+> `mysql -u root -p < sql/init.sql`
+> 脚本可重复执行，会重建全部业务表。
+
+初始化后默认管理员账号：
 
 - **学号**：`admin`
 - **密码**：`admin123`
 
-### 2. 修改数据库连接
+### 2. 准备本地私有配置
 
-编辑 `src/main/resources/application.yml`，修改数据库连接配置：
+复制配置模板，生成**仅保存在本机**的 `application-dev.yml`（已被 `.gitignore` 忽略）：
+
+```bat
+copy src\main\resources\application-dev.example.yml src\main\resources\application-dev.yml
+```
+
+编辑 `application-dev.yml`，填写本机 MySQL 的账号与密码：
 
 ```yaml
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/campus_trade?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: 你的密码
+    username: root        # 你的 MySQL 账号
+    password: 你的密码    # 你的 MySQL 密码
     driver-class-name: com.mysql.cj.jdbc.Driver
 ```
+
+> `application.yml` 只保留公共配置，默认激活 `dev` profile；
+> 账号密码、文件路径等均通过 `application-dev.yml` 或环境变量配置，仓库中不包含任何真实密钥。
 
 ### 3. 启动后端
 
@@ -168,7 +187,7 @@ npx serve .
 - **认证方式**：JWT（jjwt 0.12.6），拦截器校验登录态
 - **密码加密**：SHA-256 存储
 - **API 文档**：SpringDoc OpenAPI 2.5.0（Swagger UI）
-- **文件存储**：本地存储或阿里云 OSS（可配置）
+- **文件存储**：`StorageService` 抽象，`storage.type=local`（默认，本地磁盘）/ `oss`（阿里云 OSS）可切换；图片通过 `/uploads/**` 访问
 - **分层架构**：Controller → Service → Mapper，职责清晰
 - **异常处理**：全局异常处理器统一返回错误信息
 - **公开接口**：物品列表、互助列表等浏览接口无需 Token

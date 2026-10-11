@@ -2,15 +2,14 @@ server:
   port: 8080
 
 spring:
+  # 默认使用 dev 本地环境，可用环境变量 SPRING_PROFILES_ACTIVE 覆盖
   profiles:
-    active: local
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
     name: campus-trade
-  datasource:
-    url: jdbc:mysql://rm-bp1gpy26lasmevofezo.mysql.rds.aliyuncs.com:3306/campus_trade?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: campus_user
-    password: Ycc123456
-    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # 数据源连接不在本文件配置，请复制 application-dev.example.yml 为
+  # application-dev.yml（私有，已被 .gitignore 忽略）后填写账号密码
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -22,21 +21,31 @@ mybatis:
 app:
   browser:
     auto-open: true
-  upload-dir: ${user.dir}/uploads
 
-# JWT 配置
+# 文件存储配置：通过 storage.type 切换 local(默认) / oss
+storage:
+  type: ${STORAGE_TYPE:local}
+  local:
+    # 本地磁盘保存目录，可在 application-dev.yml 中改为绝对路径
+    path: ${STORAGE_LOCAL_PATH:uploads}
+    # 返回给前端的图片访问基础地址
+    base-url: ${STORAGE_BASE_URL:http://localhost:8080}
+    url-prefix: /uploads
+
+# JWT 配置，生产环境请通过环境变量 JWT_SECRET 覆盖
 jwt:
-  secret: campus-trade-jwt-secret-key-2024-demo
+  secret: ${JWT_SECRET:campus-trade-jwt-secret-key-2024-demo}
   expire-hours: 24
 
-# 阿里云OSS配置
+# 阿里云OSS配置（保留，默认不启用；仅 storage.type=oss 时需要）
+# 真实密钥请配置在 application-dev.yml 或环境变量中，切勿提交到仓库
 aliyun:
   oss:
-    enabled: false
-    endpoint: oss-cn-hangzhou.aliyuncs.com
-    access-key-id: your-access-key-id
-    access-key-secret: your-access-key-secret
-    bucket-name: your-bucket-name
+    enabled: ${OSS_ENABLED:false}
+    endpoint: ${OSS_ENDPOINT:}
+    access-key-id: ${OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
+    bucket-name: ${OSS_BUCKET_NAME:}
 
 # Swagger/SpringDoc配置
 springdoc:

@@ -1,0 +1,44 @@
+# ==========================================================================
+# 本地开发环境配置模板
+# --------------------------------------------------------------------------
+# 用法（Windows）:
+#   copy src\main\resources\application-dev.example.yml ^
+#        src\main\resources\application-dev.yml
+# 然后填写下面 TODO 对应的真实值。
+# application-dev.yml 属于本地私有配置，已在 .gitignore 中忽略，不会被提交。
+# ==========================================================================
+
+spring:
+  datasource:
+    # 本地 MySQL 连接串，数据库需提前手动创建：campus_trade
+    url: jdbc:mysql://localhost:3306/campus_trade?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: # TODO 填写你的 MySQL 账号（例如 root）
+    password: # TODO 填写你的 MySQL 密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# 文件存储配置
+storage:
+  # local = 本地磁盘存储（默认）；oss = 阿里云 OSS
+  type: local
+  local:
+    # 图片保存目录，支持绝对路径；不配置则默认使用项目根目录下的 uploads/
+    # path: E:/School/uploads
+    # 图片访问基础地址（后端返回给前端拼接完整URL，端口与 server.port 保持一致）
+    base-url: http://localhost:8080
+
+# JWT 密钥：建议替换为自定义的长随机字符串（至少 32 个字符）
+jwt:
+  secret: REPLACE_WITH_YOUR_OWN_LONG_RANDOM_SECRET_KEY_32_CHARS_MIN
+
+# ==========================================================================
+# 仅当 storage.type=oss（阿里云 OSS）时，才需要取消注释并填写以下配置：
+# ==========================================================================
+# storage:
+#   type: oss
+# aliyun:
+#   oss:
+#     enabled: true
+#     endpoint: # TODO 例如 oss-cn-hangzhou.aliyuncs.com
+#     access-key-id: # TODO 填写你的 AccessKey ID
+#     access-key-secret: # TODO 填写你的 AccessKey Secret
+#     bucket-name: # TODO 填写你的 Bucket 名称
