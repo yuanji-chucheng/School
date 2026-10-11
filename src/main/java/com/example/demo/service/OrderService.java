@@ -104,8 +104,10 @@ public class OrderService {
             case 3 -> { // 收货：买家操作
                 if (cur != 2 || !uid.equals(order.getBuyerId())) throw new BusinessException("无法确认收货");
             }
-            case 4 -> { // 取消：仅待付款，买家操作
-                if (cur != 0 || !uid.equals(order.getBuyerId())) throw new BusinessException("只能取消待付款订单");
+            case 4 -> { // 取消：仅待付款，买家或卖家均可操作
+                if (cur != 0 || (!uid.equals(order.getBuyerId()) && !uid.equals(order.getSellerId()))) {
+                    throw new BusinessException("只能取消待付款订单");
+                }
             }
             default -> throw new BusinessException("无效状态");
         }

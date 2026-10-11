@@ -77,6 +77,7 @@ async function loadOrders() {
         const isSeller = o.sellerId === user.userId;
         if (o.status === 0 && isBuyer) btns += `<button class="btn btn-primary" onclick="changeStatus(${o.id},1)">付款</button> `;
         if (o.status === 0 && isBuyer) btns += `<button class="btn btn-danger" onclick="changeStatus(${o.id},4)">取消</button> `;
+        if (o.status === 0 && isSeller) btns += `<button class="btn btn-danger" onclick="changeStatus(${o.id},4)">取消订单</button> `;
         if (o.status === 1 && isSeller) btns += `<button class="btn btn-primary" onclick="changeStatus(${o.id},2)">发货</button> `;
         if (o.status === 2 && isBuyer) btns += `<button class="btn btn-success" onclick="changeStatus(${o.id},3)">确认收货</button> `;
         if (o.status === 3) {
